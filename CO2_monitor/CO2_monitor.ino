@@ -9,7 +9,7 @@
 float CO2_target = 0;
 float CO2_level = 0;
 uint32_t baud = 9600; //global baud-rate
-Fan fans[5] = {Fan(0), Fan(0), Fan(0), Fan(0), Fan(0)};
+Fan fans[5] = {Fan(0), Fan(1), Fan(2), Fan(3), Fan(4)};
 
 void setFans(void);
 void changeCO2_target(void);
@@ -54,19 +54,20 @@ void loop()
 }
 
 /**
- * 
+ * Changes targeted CO2 level based on pot reading
  */
 void changeCO2_target(void)
 {
-  
+  CO2_target = analogRead(A1);
 }
 
 /**
- * 
+ * Turns fans on/off depending on pot measurment
  */
 void setFans(void)
 {
-  int numFans = 5;
+  int numFans = map(analogRead(A0), 0, 1023, 0, 5);
+  
   for(int i = 0; i < 5; i++)
   {
     if (i < numFans)
@@ -77,7 +78,7 @@ void setFans(void)
 }
 
 /**
- * 
+ * Writes information to the cloud
  */
 void writeToCloud(void *pvParameters)
 {
@@ -99,7 +100,7 @@ void writeToCloud(void *pvParameters)
 }
 
 /**
- * 
+ * Writes to SD card
  */
 void writeToFile(void *pvParameters)
 {
@@ -121,7 +122,7 @@ void writeToFile(void *pvParameters)
 }
 
 /**
- * 
+ * Displays information on LCD display
  */
 void displayLCD(void *pvParameters)
 {
@@ -142,7 +143,7 @@ void displayLCD(void *pvParameters)
 }
 
 /**
- * 
+ * Reads CO2 sensor
  */
 void readCO2_sensor(void *pvParameters)
 {
@@ -164,7 +165,8 @@ void readCO2_sensor(void *pvParameters)
 }
 
 /**
- * 
+ * Controls how much CO2 is in the tank, and tries to 
+ * match it based on the CO2 Sensor reading
  */
 void manageCO2_levels(void *pvParameters)
 {
@@ -179,6 +181,7 @@ void manageCO2_levels(void *pvParameters)
   {
     toggle = !toggle;
     digitalWrite(7, toggle);
+    setFans();
     vTaskDelay(timeDelay / portTICK_PERIOD_MS);
   }
 }
