@@ -6,7 +6,9 @@
 float CO2_target = 0;
 float CO2_level = 0;
 uint32_t baud = 9600; //global baud-rate
+Fan fans[5] = {Fan(0), Fan(0), Fan(0), Fan(0), Fan(0)};
 
+void setFans(void);
 void changeCO2_target(void);
 void writeToFile(void *pvParameters);
 void displayLCD(void *pvParameters);
@@ -18,6 +20,7 @@ void setup()
 {
   //setting up Interrupts
   attachInterrupt(0, changeCO2_target, CHANGE);
+  attachInterrupt(1, setFans, CHANGE);
   
   //priotities
   int manageCO2_priority = 1;
@@ -55,18 +58,36 @@ void changeCO2_target(void)
 /**
  * 
  */
+void setFans(void)
+{
+  int numFans = 5;
+  for(int i = 0; i < 5; i++)
+  {
+    if (i < numFans)
+      fans[i].on();
+    else
+      fans[i].off();
+  }
+}
+
+/**
+ * 
+ */
 void writeToCloud(void *pvParameters)
 {
   //runs when function is called for the first time.
   int timeDelay = 1000; //in ms
-
+  pinMode(LED_BUILTIN, OUTPUT);
   //runs forever
   for(;;)
   {
     noInterrupts();
     //write to cloud here
+    digitalWrite(LED_BUILTIN, HIGH);
     interrupts();
-    vTaskDelay(timeDelay / portTICK_PERIOD_MS); 
+    vTaskDelay(timeDelay / portTICK_PERIOD_MS);
+    digitalWrite(LED_BUILTIN, LOW);
+    vTaskDelay(timeDelay / portTICK_PERIOD_MS);
   }
 }
 
@@ -129,14 +150,13 @@ void readCO2_sensor(void *pvParameters)
 void manageCO2_levels(void *pvParameters)
 {
   //runs when function is called for the first time.
-  Fan fan;
   Solenoid solenoid;
   int timeDelay = 10; //in ms
 
   //runs forever.
   for(;;)
   {
-
+    
     vTaskDelay(timeDelay / portTICK_PERIOD_MS);
   }
 }
