@@ -1,9 +1,11 @@
 #include <Arduino_FreeRTOS.h>
 #include "fan.h"
 #include "solenoid.h"
+#include "CO2_Sensor.h"
 
 float CO2_target = 0;
 float CO2_level = 0;
+uint32_t baud = 9600; //global baud-rate
 
 void changeCO2_target(void);
 void writeToFile(void *pvParameters);
@@ -87,12 +89,14 @@ void displayLCD(void *pvParameters)
 void readCO2_sensor(void *pvParameters)
 {
   //runs when function is called for the first time.
-  int timeDelay = 100; //in ms
+  int timeDelay = 200; //in ms
+  SoftwareSerial *temp(1, 2);
+  CO2_Sensor co2(temp, baud);
 
   //runs forever
   for(;;)
   {
-    
+    co2.read();
     vTaskDelay(timeDelay / portTICK_PERIOD_MS);
   }
 }
