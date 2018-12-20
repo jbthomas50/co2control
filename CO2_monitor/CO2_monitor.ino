@@ -12,6 +12,7 @@ void writeToFile(void *pvParameters);
 void displayLCD(void *pvParameters);
 void readCO2_sensor(void *pvParameters);
 void manageCO2_levels(void *pvParameters);
+void writeToCloud(void *pvParameters);
 
 void setup() 
 {
@@ -22,17 +23,20 @@ void setup()
   int manageCO2_priority = 1;
   int readCO2_priority = 2;
   int writeToFile_priority = 3;
-  int displayLCD_priority = 4;
+  int writeToCloud_priority = 4;
+  int displayLCD_priority = 5;
 
 
-  xTaskCreate(writeToFile, "Writting to file", 128, 
-              NULL, writeToFile_priority, NULL);
   xTaskCreate(displayLCD, "Displaying to LCD", 128,
               NULL, displayLCD_priority, NULL);
+  xTaskCreate(writeToFile, "Writting to file", 128, 
+              NULL, writeToFile_priority, NULL);
   xTaskCreate(readCO2_sensor, "Reading CO2 sensor", 128,
               NULL, readCO2_priority, NULL);
   xTaskCreate(manageCO2_levels, "Managing CO2 levels", 128,
               NULL, manageCO2_priority, NULL);
+  xTaskCreate(writeToCloud, "Writting to Google Sheets", 128,
+              NULL, writeToCloud_priority, NULL);
 }
 
 void loop() 
@@ -46,6 +50,24 @@ void loop()
 void changeCO2_target(void)
 {
   
+}
+
+/**
+ * 
+ */
+void writeToCloud(void *pvParameters)
+{
+  //runs when function is called for the first time.
+  int timeDelay = 1000; //in ms
+
+  //runs forever
+  for(;;)
+  {
+    noInterrupts();
+    //write to cloud here
+    interrupts();
+    vTaskDelay(timeDelay / portTICK_PERIOD_MS); 
+  }
 }
 
 /**
