@@ -26,13 +26,10 @@ void setup()
   attachInterrupt(0, changeCO2_target, CHANGE);
   attachInterrupt(1, setFans, CHANGE);
 
-  pinMode(2, OUTPUT);         //Did we need these or are they just for testing?
-  digitalWrite(2, HIGH);
-
   lcd.begin(16, 2);
-  lcd.print("CO2 lvl:         ");
+  lcd.print("ACT:             ");
   lcd.setCursor(0,1);
-  lcd.print("Set lvl:         ");
+  lcd.print("SET:             ");
   
   //priotities
   int manageCO2_priority = 1;
