@@ -23,15 +23,12 @@ void writeToCloud(void *pvParameters);
 void setup() 
 {
   //setting up Interrupts
-<<<<<<< HEAD
 //  attachInterrupt(0, changeCO2_target, CHANGE);
 //  attachInterrupt(1, setFans, CHANGE);
-=======
   lcd.begin(16, 2);
   lcd.print("ACT:             ");
   lcd.setCursor(0,1);
   lcd.print("SET:             ");
->>>>>>> 4509cbd8447c6441e17db3d8f13be0c647df50b6
   
   //priotities
   int manageCO2_priority = 1;
