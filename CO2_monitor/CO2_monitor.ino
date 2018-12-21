@@ -19,8 +19,8 @@ void writeToCloud(void *pvParameters);
 void setup() 
 {
   //setting up Interrupts
-  attachInterrupt(0, changeCO2_target, CHANGE);
-  attachInterrupt(1, setFans, CHANGE);
+//  attachInterrupt(0, changeCO2_target, CHANGE);
+//  attachInterrupt(1, setFans, CHANGE);
   
   //priotities
   int manageCO2_priority = 1;
