@@ -10,6 +10,7 @@ float CO2_target = 0;
 float CO2_level = 0;
 uint32_t baud = 9600; //global baud-rate
 Fan fans[5] = {Fan(0), Fan(1), Fan(2), Fan(3), Fan(4)};
+LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7);
 
 void setFans(void);
 void changeCO2_target(void);
@@ -25,8 +26,13 @@ void setup()
   attachInterrupt(0, changeCO2_target, CHANGE);
   attachInterrupt(1, setFans, CHANGE);
 
-  pinMode(2, OUTPUT);
+  pinMode(2, OUTPUT);         //Did we need these or are they just for testing?
   digitalWrite(2, HIGH);
+
+  lcd.begin(16, 2);
+  lcd.print("CO2 lvl:         ");
+  lcd.setCursor(0,1);
+  lcd.print("Set lvl:         ");
   
   //priotities
   int manageCO2_priority = 1;
@@ -136,6 +142,8 @@ void displayLCD(void *pvParameters)
   {
     toggle = !toggle;
     digitalWrite(11, toggle);
+
+    
     
     // divide by "portTICK_PERIOD_MS" to convert to seconds
     vTaskDelay(timeDelay / portTICK_PERIOD_MS); 
