@@ -8,10 +8,8 @@
 class CO2_Sensor
 {
 public:
-  void print();
   int getCO2();
   void fill_buffer();
-  int format_output();
   void read();
   void begin();
   CO2_Sensor(SoftwareSerial * CO2_serial);
@@ -25,44 +23,11 @@ private:
 };
 
 /**
- * 
- */
-void CO2_Sensor::print()
-{
-  for(int i = 0; i < this->ind; i++)
-  {
-    this->index = 0;
-    this->format_output();
-    Serial.print(" Raw PPM        ");
-    index = 8;
-    this->format_output();
-    Serial.println(" Filtered PPM\n\n");
-  }
-}
-
-/**
  * Returns the CO2 in PPM
  */
 int CO2_Sensor::getCO2()
 {
   return (this->co2 * this->multiplier);
-}
-
-/**
- * 
- */
-int CO2_Sensor::format_output()
-{
-  co2 = buffer[15-index]-0x30;
-  co2 = co2+((buffer[14-index]-0x30)*10);
-  co2 +=(buffer[13-index]-0x30)*100;
-  co2 +=(buffer[12-index]-0x30)*1000;
-  co2 +=(buffer[11-index]-0x30)*10000;
-  Serial.print("\n CO2 = ");
-  Serial.print(co2 * multiplier, 0);
-// Serial.print(" PPM,");
-//    Serial.print("\n");
-  delay(200);
 }
 
 /**

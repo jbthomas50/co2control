@@ -10,8 +10,18 @@
 volatile long CO2_target = 0;
 volatile long CO2_level = 0;
 
-void setFans(void);
-void changeCO2_target(void);
+//Variables stored in flash memory
+const char LCD_message0[] PROGMEM = "ACT: ";
+const char LCD_message1[] PROGMEM = "SET: ";
+const char LCD_message2[] PROGMEM = "|FAN";
+const char LCD_message3[] PROGMEM = "|  ";
+
+const int manageCO2_priority PROGMEM = 1;
+const int readCO2_priority PROGMEM = 2;
+const int writeToFile_priority PROGMEM = 3;
+const int writeToCloud_priority PROGMEM = 4;
+const int displayLCD_priority PROGMEM = 5;
+
 void writeToFile(void *pvParameters);
 void displayLCD(void *pvParameters);
 void readCO2_sensor(void *pvParameters);
@@ -25,11 +35,7 @@ void setup()
     ; // wait for serial port to connect. Needed for native USB, on LEONARDO, MICRO, YUN, and other 32u4 based boards.
   }
   //priotities
-  int manageCO2_priority = 1;
-  int readCO2_priority = 2;
-  int writeToFile_priority = 3;
-  int writeToCloud_priority = 4;
-  int displayLCD_priority = 5;
+  
 
   xTaskCreate(displayLCD, "Displaying to LCD", 128,
               NULL, displayLCD_priority, NULL);
@@ -93,33 +99,34 @@ void displayLCD(void *pvParameters)
   //runs when function is called for the first time.
   LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7);
   lcd.begin(16, 2);
-  lcd.print("ACT:             ");
+  lcd.print(LCD_message0);
   lcd.setCursor(0,1);
-  lcd.print("SET:             ");
+  lcd.print(LCD_message1);
   pinMode(A0, INPUT);
   pinMode(A1, INPUT);
 
   //runs forever
   for(;;)
   {
-   lcd.home ();
-   lcd.clear();
+    lcd.home ();
+    lcd.clear();
 
-   CO2_target = (map(analogRead(A0), 0, 1023, 0, 101) * 100) + (map(analogRead(A1), 0, 1023, 1, 101) * 10000);
+    CO2_target = (map(analogRead(A0), 0, 1023, 0, 101) * 100) + (map(analogRead(A1), 0, 1023, 1, 101) * 10000);
 
-   lcd.print("ACT: ");
-   lcd.print("XXXXXXX|fan");
-   lcd.setCursor(0,1);
-   lcd.print("SET: ");
-   lcd.print(2);
-   lcd.setCursor(5, 1);
-   for(int i = 0; i < 6 - ((String) CO2_target).length(); i++)
-   {
-       lcd.print(" ");
-   }
-   lcd.print(CO2_target);
-   lcd.print("|  2");
-    
+    lcd.print(LCD_message0);
+    lcd.print(CO2_level + LCD_message2);
+    lcd.setCursor(0,1);
+    lcd.print(LCD_message1);
+    lcd.print(2);
+    lcd.setCursor(5, 1);
+    for(int i = 0; i < 6 - ((String) CO2_target).length(); i++)
+    {
+        lcd.print(" ");
+    }
+    lcd.print(CO2_target);
+    lcd.print(LCD_message3);
+    lcd.print("2");
+  
     // divide by "portTICK_PERIOD_MS" to convert to seconds
     vTaskDelay(500/*in ms*/ / portTICK_PERIOD_MS); 
   }
