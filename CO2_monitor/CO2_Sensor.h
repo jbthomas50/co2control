@@ -13,15 +13,14 @@ public:
   void fill_buffer();
   int format_output();
   void read();
-  void begin(uint32_t baud);
-  CO2_Sensor(SoftwareSerial * CO2_serial, uint32_t baud);
-  CO2_Sensor();
+  void begin();
+  CO2_Sensor(SoftwareSerial * CO2_serial);
 private:
   uint8_t buffer[25];
   uint8_t ind;
   uint8_t index;
   int co2;
-  double multiplier; // 1 for 2% = 20,000 PPM, 10 for 20% = 200,000
+  int multiplier; // 1 for 2% = 20,000 PPM, 10 for 20% = 200,000
   SoftwareSerial *CO2_serial;
 };
 
@@ -60,7 +59,7 @@ int CO2_Sensor::format_output()
   co2 +=(buffer[12-index]-0x30)*1000;
   co2 +=(buffer[11-index]-0x30)*10000;
   Serial.print("\n CO2 = ");
-  Serial.print(co2*multiplier,0);
+  Serial.print(co2 * multiplier, 0);
 // Serial.print(" PPM,");
 //    Serial.print("\n");
   delay(200);
@@ -83,7 +82,7 @@ void CO2_Sensor::fill_buffer()
   }
   // buffer() now filled with sensor ascii data
   // ind contains the number of characters loaded into buffer up to 0xA =  CR
-  ind = ind -2; // decrement buffer to exactly match last numerical character
+  ind = ind - 2; // decrement buffer to exactly match last numerical character
 }
 
 /**
@@ -97,31 +96,23 @@ void CO2_Sensor::read()
 /**
  * 
  */
-void CO2_Sensor::begin(uint32_t baud)
+void CO2_Sensor::begin()
 {
   this->multiplier = 1;
   this->co2 = 0;
   this->ind = 0;
   this->index = 0;
-  this->CO2_serial->begin(baud);
+  this->CO2_serial->begin(9600);
 }
 
 /**
  * 
  */
-CO2_Sensor::CO2_Sensor(SoftwareSerial *CO2_serial, uint32_t baud)
+CO2_Sensor::CO2_Sensor(SoftwareSerial *CO2_serial)
 {
   this->CO2_serial = CO2_serial;
-  this->begin(baud);
+  this->multiplier = 1;
+  this->begin();
 }
-
-/**
- * 
- */
-CO2_Sensor::CO2_Sensor()
-{
-  
-}
-
 
 #endif /*CO2_SENSOR_H*/
