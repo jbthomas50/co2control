@@ -6,8 +6,9 @@
 #include "CO2_Sensor.h"
 
 
-float CO2_target = 0;
-float CO2_level = 0;
+
+volatile long CO2_target = 0;
+volatile long CO2_level = 0;
 
 void setFans(void);
 void changeCO2_target(void);
@@ -18,7 +19,11 @@ void manageCO2_levels(void *pvParameters);
 void writeToCloud(void *pvParameters);
 
 void setup() 
-{ 
+{
+  Serial.begin(9600);
+  while (!Serial) {
+    ; // wait for serial port to connect. Needed for native USB, on LEONARDO, MICRO, YUN, and other 32u4 based boards.
+  }
   //priotities
   int manageCO2_priority = 1;
   int readCO2_priority = 2;
@@ -28,35 +33,30 @@ void setup()
 
   xTaskCreate(displayLCD, "Displaying to LCD", 128,
               NULL, displayLCD_priority, NULL);
-  xTaskCreate(writeToFile, "Writting to file", 128, 
+  xTaskCreate(saveData, "Writting to file", 128, 
               NULL, writeToFile_priority, NULL);
-  xTaskCreate(readCO2_sensor, "Reading CO2 sensor", 128,
-              NULL, readCO2_priority, NULL);
   xTaskCreate(manageCO2_levels, "Managing CO2 levels", 128,
               NULL, manageCO2_priority, NULL);
+  xTaskCreate(readCO2_sensor, "Reading CO2 sensor", 128,
+              NULL, readCO2_priority, NULL);
   xTaskCreate(writeToCloud, "Writting to Google Sheets", 128,
               NULL, writeToCloud_priority, NULL);
 }
 
 void loop() 
 {
-  // Empty. Things are done in Tasks.
-}
-
-/**
- * Changes targeted CO2 level based on pot reading
- */
-void changeCO2_target(void)
-{
-  CO2_target = analogRead(A1);
+  //Tasks during down time, or delays.
 }
 
 /**
  * Writes information to the cloud
  */
 void writeToCloud(void *pvParameters)
-{ 
+{
+  (void) pvParameters;
+  
   //runs when function is called for the first time.
+  int timeDelay = 2000; //in ms
 
   //runs forever
   for(;;)
@@ -71,7 +71,7 @@ void writeToCloud(void *pvParameters)
 /**
  * Writes to SD card
  */
-void writeToFile(void *pvParameters)
+void saveData(void *pvParameters)
 {
   //runs when function is called for the first time.
 
@@ -96,10 +96,29 @@ void displayLCD(void *pvParameters)
   lcd.print("ACT:             ");
   lcd.setCursor(0,1);
   lcd.print("SET:             ");
+  pinMode(A0, INPUT);
+  pinMode(A1, INPUT);
 
   //runs forever
   for(;;)
   {
+   lcd.home ();
+   lcd.clear();
+
+   CO2_target = (map(analogRead(A0), 0, 1023, 0, 101) * 100) + (map(analogRead(A1), 0, 1023, 1, 101) * 10000);
+
+   lcd.print("ACT: ");
+   lcd.print("XXXXXXX|fan");
+   lcd.setCursor(0,1);
+   lcd.print("SET: ");
+   lcd.print(2);
+   lcd.setCursor(5, 1);
+   for(int i = 0; i < 6 - ((String) CO2_target).length(); i++)
+   {
+       lcd.print(" ");
+   }
+   lcd.print(CO2_target);
+   lcd.print("|  2");
     
     // divide by "portTICK_PERIOD_MS" to convert to seconds
     vTaskDelay(500/*in ms*/ / portTICK_PERIOD_MS); 
