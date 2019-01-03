@@ -31,22 +31,22 @@ void writeToCloud(void *pvParameters);
 void setup() 
 {
   Serial.begin(9600);
-  while (!Serial) {
-    ; // wait for serial port to connect. Needed for native USB, on LEONARDO, MICRO, YUN, and other 32u4 based boards.
-  }
+//  while (!Serial) {
+//    ; // wait for serial port to connect. Needed for native USB, on LEONARDO, MICRO, YUN, and other 32u4 based boards.
+//  }
   //priotities
   
 
-  xTaskCreate(displayLCD, "Displaying to LCD", 128,
-              NULL, displayLCD_priority, NULL);
-  xTaskCreate(saveData, "Writting to file", 128, 
-              NULL, writeToFile_priority, NULL);
+//  xTaskCreate(displayLCD, "Displaying to LCD", 128,
+//              NULL, displayLCD_priority, NULL);
+//  xTaskCreate(saveData, "Writting to file", 128, 
+//              NULL, writeToFile_priority, NULL);
   xTaskCreate(manageCO2_levels, "Managing CO2 levels", 128,
               NULL, manageCO2_priority, NULL);
-  xTaskCreate(readCO2_sensor, "Reading CO2 sensor", 128,
-              NULL, readCO2_priority, NULL);
-  xTaskCreate(writeToCloud, "Writting to Google Sheets", 128,
-              NULL, writeToCloud_priority, NULL);
+//  xTaskCreate(readCO2_sensor, "Reading CO2 sensor", 128,
+//              NULL, readCO2_priority, NULL);
+//  xTaskCreate(writeToCloud, "Writting to Google Sheets", 128,
+//              NULL, writeToCloud_priority, NULL);
 }
 
 void loop() 
@@ -155,12 +155,12 @@ void manageCO2_levels(void *pvParameters)
 {
   //runs when function is called for the first time.
   Solenoid solenoid;
-  Fan fans[4] = {Fan(0), Fan(0), Fan(0), Fan(0)};
+  Fan fans[4] = {Fan(8), Fan(9), Fan(10), Fan(11)};
   
   //runs forever.
   for(;;)
   {
-    int numFans = map(analogRead(A0), 0, 1023, 0, 5);
+    int numFans = map(analogRead(A0), 0, 1024, 0, 5);
   
     for(int i = 0; i < 5; i++)
     {
