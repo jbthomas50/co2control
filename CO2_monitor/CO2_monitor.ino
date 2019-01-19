@@ -1,134 +1,177 @@
+//Arduino Libraries
 #include <Arduino_FreeRTOS.h>
-#include <Wire.h> 
+#include <semphr.h>
 #include <LiquidCrystal_I2C.h>
+
+//Project Libraries
 #include "fan.h"
 #include "solenoid.h"
 #include "CO2_Sensor.h"
 
+//SEMAPHORES
+SemaphoreHandle_t xLevelMutex;
+SemaphoreHandle_t xTargetMutex;
+SemaphoreHandle_t xDisplayMutex;
+SemaphoreHandle_t xManageSignal;
+SemaphoreHandle_t xSaveCloudSignal;
+SemaphoreHandle_t xSaveFileSignal;
+//QueueHandle_t xDisplayQueue;
 
+//GLOBAL VARIABLES
+volatile unsigned long CO2_target = 100;
+volatile unsigned long CO2_level = 100;
+LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7);
+uint8_t numFans = 1;
+Fans fans = Fans(8, 9, 10, 11);
+bool refreshDisplay = true;
 
-volatile long CO2_target = 0;
-volatile long CO2_level = 0;
-
-//Variables stored in flash memory
-const char LCD_message0[] PROGMEM = "ACT: ";
-const char LCD_message1[] PROGMEM = "SET: ";
-const char LCD_message2[] PROGMEM = "|FAN";
-const char LCD_message3[] PROGMEM = "|  ";
-
-const int manageCO2_priority PROGMEM = 1;
-const int readCO2_priority PROGMEM = 2;
-const int writeToFile_priority PROGMEM = 3;
-const int writeToCloud_priority PROGMEM = 4;
-const int displayLCD_priority PROGMEM = 5;
-
+//Prototypes
 void writeToFile(void *pvParameters);
-void displayLCD(void *pvParameters);
+void writeToCloud(void *pvParameters);
 void readCO2_sensor(void *pvParameters);
 void manageCO2_levels(void *pvParameters);
-void writeToCloud(void *pvParameters);
+void setUpHardware();
 
 void setup() 
 {
   Serial.begin(9600);
-//  while (!Serial) {
-//    ; // wait for serial port to connect. Needed for native USB, on LEONARDO, MICRO, YUN, and other 32u4 based boards.
-//  }
-  //priotities
-  
+  setUpHardware();
 
-//  xTaskCreate(displayLCD, "Displaying to LCD", 128,
-//              NULL, displayLCD_priority, NULL);
-//  xTaskCreate(saveData, "Writting to file", 128, 
-//              NULL, writeToFile_priority, NULL);
-  xTaskCreate(manageCO2_levels, "Managing CO2 levels", 128,
-              NULL, manageCO2_priority, NULL);
-//  xTaskCreate(readCO2_sensor, "Reading CO2 sensor", 128,
-//              NULL, readCO2_priority, NULL);
-//  xTaskCreate(writeToCloud, "Writting to Google Sheets", 128,
-//              NULL, writeToCloud_priority, NULL);
+  //define Semaphores
+  if(xLevelMutex == NULL)
+  {
+    xLevelMutex = xSemaphoreCreateMutex();
+    if( (xLevelMutex) != NULL)
+    {
+      xSemaphoreGive((xLevelMutex));
+    }
+  }
+
+  if(xTargetMutex == NULL)
+  {
+    xTargetMutex = xSemaphoreCreateMutex();
+    if( (xTargetMutex) != NULL)
+    {
+      xSemaphoreGive((xTargetMutex));
+    }
+  }
+
+  if(xDisplayMutex == NULL)
+  {
+    xDisplayMutex = xSemaphoreCreateMutex();
+    if( (xDisplayMutex) != NULL)
+    {
+      xSemaphoreGive((xDisplayMutex));
+    }
+  }
+
+  if(xManageSignal == NULL)
+  {
+    vSemaphoreCreateBinary(xManageSignal);
+  }
+
+  if(xSaveCloudSignal == NULL)
+  {
+    vSemaphoreCreateBinary(xSaveCloudSignal);
+  }
+
+  if(xSaveFileSignal == NULL)
+  {
+    vSemaphoreCreateBinary(xSaveFileSignal);
+  }
+  
+  xTaskCreate(manageCO2_levels, "mngCO2", 
+              100, NULL, 3, NULL);
+  xTaskCreate(readCO2_sensor, "rdCO2", 
+              100, NULL, 3, NULL);
+//   xTaskCreate(writeToCloud, "wrt2cld", 
+//               100, NULL, 1, NULL);
+//   xTaskCreate(writeToFile, "wrt2FL", 
+//               100, NULL, 1, NULL);
 }
 
 void loop() 
 {
   //Tasks during down time, or delays.
-}
+  uint8_t tempFans = numFans;
+  numFans = 3;/*map(analogRead(A0), 0, 1024, 0, 5);*/
+  if (numFans != tempFans)
+  {
+    fans.on(numFans);
+    refreshDisplay = true;
+  }
 
-/**
- * Writes information to the cloud
- */
-void writeToCloud(void *pvParameters)
-{
-  (void) pvParameters;
+  if(refreshDisplay)
+  {
+    lcd.setCursor(4, 0);
+    lcd.print(CO2_level);
   
-  //runs when function is called for the first time.
-  int timeDelay = 2000; //in ms
+    lcd.setCursor(4, 1);
+    lcd.print(CO2_target);
+  
+    lcd.setCursor(15, 1);
+    lcd.print(numFans);
 
-  //runs forever
-  for(;;)
-  {
-    noInterrupts();
-    //write to cloud here
-    interrupts();
-    vTaskDelay(2000/*in ms*/ / portTICK_PERIOD_MS);
+    refreshDisplay = false;
   }
 }
 
-/**
- * Writes to SD card
- */
-void saveData(void *pvParameters)
+void setUpHardware()
 {
-  //runs when function is called for the first time.
-
-  //runs forever
-  for(;;)
-  {
-    noInterrupts();
-    //write to file here
-    interrupts();
-    vTaskDelay(1000/*in ms*/ / portTICK_PERIOD_MS); //one tick delay is about 15ms 
-  }
-}
-
-/**
- * Displays information on LCD display
- */
-void displayLCD(void *pvParameters)
-{
-  //runs when function is called for the first time.
-  LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7);
-  lcd.begin(16, 2);
-  lcd.print(LCD_message0);
+  lcd.begin(16,2);
+  lcd.clear();
+  lcd.home();
+  lcd.print(F("ACT: "));
+  lcd.setCursor(12, 0);
+  lcd.print(F("|FANS"));
   lcd.setCursor(0,1);
-  lcd.print(LCD_message1);
+  lcd.print(F("SET: "));
+  lcd.setCursor(12, 1);
+  lcd.print(F("|   "));
+    
   pinMode(A0, INPUT);
   pinMode(A1, INPUT);
+}
+
+/**
+ * Writes information to the cloud (Should make this a time interupt)
+ */
+void writeToCloud(void *pvParameters)
+{  
+  //runs when function is called for the first time.
 
   //runs forever
   for(;;)
   {
-    lcd.home ();
-    lcd.clear();
+    //TODO: Write to cloud here... 
+     if(xSemaphoreTake(xSaveCloudSignal, portMAX_DELAY))
+     {
+      if(xSemaphoreTake(xDisplayMutex, 1000))
+      {
+        Serial.println(F("FILE"));
+      }
+     }
+  }
+}
 
-    CO2_target = (map(analogRead(A0), 0, 1023, 0, 101) * 100) + (map(analogRead(A1), 0, 1023, 1, 101) * 10000);
+/**
+ * Writes to SD card (Should make this a time interupt)
+ */
+void writeToFile(void *pvParameters)
+{
+  //runs when function is called for the first time.
 
-    lcd.print(LCD_message0);
-    lcd.print(CO2_level + LCD_message2);
-    lcd.setCursor(0,1);
-    lcd.print(LCD_message1);
-    lcd.print(2);
-    lcd.setCursor(5, 1);
-    for(int i = 0; i < 6 - ((String) CO2_target).length(); i++)
-    {
-        lcd.print(" ");
-    }
-    lcd.print(CO2_target);
-    lcd.print(LCD_message3);
-    lcd.print("2");
-  
-    // divide by "portTICK_PERIOD_MS" to convert to seconds
-    vTaskDelay(500/*in ms*/ / portTICK_PERIOD_MS); 
+  //runs forever
+  for(;;)
+  {
+    //TODO: Write to SD card here...
+     if(xSemaphoreTake(xSaveFileSignal, portMAX_DELAY))
+     {
+      if(xSemaphoreTake(xDisplayMutex, 1000))
+      {
+        Serial.println(F("FILE"));
+      }
+     }
   }
 }
 
@@ -138,12 +181,46 @@ void displayLCD(void *pvParameters)
 void readCO2_sensor(void *pvParameters)
 {
   //runs when function is called for the first time.
-
+  static unsigned long tempLevel = 0;
+  static unsigned long tempTarget = 0;
   //runs forever
   for(;;)
   {
+    //TODO: Read sensor here...
+    tempLevel = 1000;
+
+    //READ USER INPUT
+    tempTarget = 2000; /*(map(analogRead(A0), 0, 1023, 0, 101) * 100) + (map(analogRead(A1), 0, 1023, 1, 101) * 10000);*/
     
-    vTaskDelay(200/*in ms*/ / portTICK_PERIOD_MS);
+    if(tempTarget >= tempLevel)
+    {
+      xSemaphoreGive(xManageSignal);
+    }
+
+    if(xSemaphoreTake(xLevelMutex, 1000))
+    {
+      if(CO2_level != tempLevel)
+        refreshDisplay = true;
+        
+      CO2_level = tempLevel;
+      xSemaphoreGive(xLevelMutex);
+    }
+
+    if(xSemaphoreTake(xTargetMutex, 1000))
+    {
+      if(CO2_target != tempTarget)
+        refreshDisplay = true;
+        
+      CO2_target = tempTarget;
+      xSemaphoreGive(xTargetMutex);
+    }
+
+    if(xSemaphoreTake(xDisplayMutex, 500))
+    {
+      xSemaphoreGive(xDisplayMutex);
+    }
+
+    vTaskDelay(500/*in ms*/ / portTICK_PERIOD_MS);
   }
 }
 
@@ -154,22 +231,18 @@ void readCO2_sensor(void *pvParameters)
 void manageCO2_levels(void *pvParameters)
 {
   //runs when function is called for the first time.
-  Solenoid solenoid;
-  Fan fans[4] = {Fan(8), Fan(9), Fan(10), Fan(11)};
+  static Solenoid solenoid;
   
   //runs forever.
   for(;;)
   {
-    int numFans = map(analogRead(A0), 0, 1024, 0, 5);
-  
-    for(int i = 0; i < 5; i++)
+    if(xSemaphoreTake(xManageSignal, portMAX_DELAY))
     {
-      if (i < numFans)
-        fans[i].on();
-      else
-        fans[i].off();
+      //TODO: Turn on solenoid here...
+      if(xSemaphoreTake(xDisplayMutex, 500))
+      {
+        xSemaphoreGive(xDisplayMutex);
+      }
     }
-    
-    vTaskDelay(300/*in ms*/ / portTICK_PERIOD_MS);
   }
 }

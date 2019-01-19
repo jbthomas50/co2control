@@ -1,64 +1,67 @@
-#ifndef FAN_H
-#define FAN_H
+#ifndef FANS_H
+#define FANS_H
 
 /**
  * 
  */
-class Fan 
+class Fans
 {
 public:
-  bool isOn();
   void off();
-  void on();
-  Fan(uint8_t pin);
-  Fan();
-  ~Fan();
+  void on(uint8_t &num);
+  Fans(uint8_t fan0, uint8_t fan1, uint8_t fan2, uint8_t fan3);
+  ~Fans();
 private:
-  uint8_t pin;
-  bool status;
+  uint8_t fanPins[4];
 };
-
-/**
- * Tells if Fan is on or off
- */
-bool Fan::isOn(){
-  return this->status;
-}
 
 /**
  * Turn Fan off
  */
-void Fan::off()
+void Fans::off()
 {
-  digitalWrite(this->pin, LOW);
-  this->status = false;
+  for(uint8_t i = 0; i < 4; i++)
+  {
+    digitalWrite(fanPins[i], LOW);
+  }
 }
 
 /**
  * Turn Fan on
  */
-void Fan::on()
+void Fans::on(uint8_t &num)
 {
-  digitalWrite(this->pin, HIGH);
-  this->status = true;
+  for(uint8_t i = 0; i < 4; i++)
+  {
+    if(i < num)
+      digitalWrite(fanPins[i], HIGH);
+    else
+      digitalWrite(fanPins[i], LOW);
+  }
 }
 
 /**
  * Non-default constructor
  */
-Fan::Fan(uint8_t pin)
+Fans::Fans(uint8_t fan0, uint8_t fan1, uint8_t fan2, uint8_t fan3)
 {
-  this->pin = pin;
-  pinMode(this->pin, OUTPUT);
-  this->off();
+  fanPins[0] = fan0;
+  fanPins[1] = fan1;
+  fanPins[2] = fan2;
+  fanPins[3] = fan3;
+  for(uint8_t i = 0; i < 4; i++)
+  {
+    pinMode(fanPins[i], OUTPUT);
+    digitalWrite(fanPins[i], LOW); //make sure the fan is of initially
+  }
 }
 
 /**
  * Makes sure that the Fan is off
  */
-Fan::~Fan()
+Fans::~Fans()
 {
    this->off();
 }
 
-#endif /*FAN_H*/
+#endif /*FANS_H*/
