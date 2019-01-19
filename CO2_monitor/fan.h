@@ -11,7 +11,6 @@ public:
   void off();
   void on();
   Fan(uint8_t pin);
-  Fan();
   ~Fan();
 private:
   uint8_t pin;

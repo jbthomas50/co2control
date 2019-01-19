@@ -13,6 +13,7 @@ AN128_ardunio_cozir CO2 Demonstration code 11/29/2017 Runs on Ardunio UNO, MEGA 
    3.3v------------------- 3 (Vcc)  
     13 -------------------- 5 (Rx)
     12 -------------------- 7 (Tx)
+    
 */
 #include <SoftwareSerial.h>
 
@@ -32,16 +33,16 @@ void setup() {
   Serial.print("\n\n");
   Serial.println("             AN128 Ardunio to Cozir CO2 Sensor - Demonstration code 11/29/2017\n\n"); 
   mySerial.begin(9600); // Start serial communications with sensor
-  //mySerial.println("K 0");  // Set Command mode
+  mySerial.println("K 0");  // Set Command mode
   mySerial.println("M 6"); // send Mode for Z and z outputs
   // "Z xxxxx z xxxxx" (CO2 filtered and unfiltered)
 
   mySerial.println("K 1");  // set streaming mode
-  
+  Serial.println("finished setup");
 }
 
 void loop() {
-  fill_buffer();  // function call that reacds CO2 sensor and fills buffer
+  fill_buffer();  // function call that reads CO2 sensor and fills buffer
  
     Serial.print("Buffer contains: ");
   for(int j=0; j<ind; j++)Serial.print(buffer[j],HEX);
@@ -54,17 +55,19 @@ void loop() {
   Serial.println(" Filtered PPM\n\n");
 }
 
-int fill_buffer(void){
+int fill_buffer(void){        
   
 
 // Fill buffer with sensor ascii data
 ind = 0;
+Serial.println("filling");
 while(buffer[ind-1] != 0x0A){  // Read sensor and fill buffer up to 0XA = CR
   if(mySerial.available()){
     buffer[ind] = mySerial.read();
-    ind++;
+    ind++;        
     } 
-  }
+  }        
+  Serial.println("Serial is available");
   // buffer() now filled with sensor ascii data
   // ind contains the number of characters loaded into buffer up to 0xA =  CR
   ind = ind -2; // decrement buffer to exactly match last numerical character
@@ -78,8 +81,8 @@ while(buffer[ind-1] != 0x0A){  // Read sensor and fill buffer up to 0XA = CR
   co2 +=(buffer[11-index]-0x30)*10000;
   Serial.print("\n CO2 = ");
   Serial.print(co2*multiplier,0);
-// Serial.print(" PPM,");
-//    Serial.print("\n");
+ Serial.print(" PPM,");
+    Serial.print("\n");
   delay(200);
  }
 
