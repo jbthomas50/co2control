@@ -8,15 +8,9 @@ class Fans
 {
 public:
   void off();
-<<<<<<< HEAD
-  void on();
-  Fan(uint8_t pin);
-  ~Fan();
-=======
   void on(uint8_t &num);
   Fans(uint8_t fan0, uint8_t fan1, uint8_t fan2, uint8_t fan3);
   ~Fans();
->>>>>>> 8675fdd19bc9d8d15756ea2e47ad80f041634607
 private:
   uint8_t fanPins[4];
 };
