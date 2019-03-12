@@ -5,7 +5,6 @@
 
 //Project Libraries
 #include "fan.h"
-#include "solenoid.h"
 #include "CO2_Sensor.h"
 
 //SEMAPHORES

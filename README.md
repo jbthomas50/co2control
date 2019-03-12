@@ -8,8 +8,9 @@ There is an LCD screen to display the co2 concentration setting and the current 
 *Suggestions*
 
 The LiquidCrystal.h library for the arduino isn't good. Go to 
-this website to download a better version, rename it, and replace 
+the following website to download a better version, rename it, and replace 
 it with the current arduino LiguidCrystal.h library.
+https://bitbucket.org/fmalpartida/new-liquidcrystal/downloads/?tab=downloads
 
 To use the ESP 8266 wifi module, follow the instructions located 
 at this website:

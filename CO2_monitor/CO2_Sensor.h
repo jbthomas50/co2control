@@ -59,7 +59,7 @@ void CO2_Sensor::fill_buffer()
  */
 void CO2_Sensor::read()
 {
-  mySerial.println("Z"); // send Mode Z outputs
+  this->CO2_serial->println("Z"); // send Mode Z outputs
   this->fill_buffer();
   this->format_output_co2();
 }
@@ -74,7 +74,7 @@ void CO2_Sensor::begin()
   this->ind = 0;
   this->index = 0;
   this->CO2_serial->begin(9600);
-  mySerial.println("K 2");  // set polling mode
+  this->CO2_serial->println("K 2");  // set polling mode
 }
 
 /**
@@ -88,10 +88,10 @@ int CO2_Sensor::format_output_co2()
   co2 += (buffer[bufferMax-index++]-0x30)*100;
   co2 += (buffer[bufferMax-index++]-0x30)*1000;
   co2 += (buffer[bufferMax-index++]-0x30)*10000;
-  Serial.print("\n CO2 = ");
-  Serial.print(co2*multiplier, 0);
-  Serial.print(" PPM");
-  Serial.print("\n");
+//  Serial.print("\n CO2 = ");
+//  Serial.print(co2*multiplier, 0);
+//  Serial.print(" PPM");
+//  Serial.print("\n");
 }
 
 /**
