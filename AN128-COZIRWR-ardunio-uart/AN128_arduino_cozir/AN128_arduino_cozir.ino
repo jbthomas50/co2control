@@ -40,6 +40,8 @@ void setup() {
   mySerial.println("Z");// send Mode for H, T, and Z outputs
   // "H xxxxx T xxxxx Z xxxxx" (humidity, temperature, and filtered CO2 level)
   mySerial.println("K 2");  // set polling mode
+  delay(100000);
+  mySerial.println("G");
 }
 
 void loop() {
@@ -57,14 +59,6 @@ void loop() {
     Serial.print((char)buffer[j]);
   }
   Serial.print("\n");
-
-//  index = 16;
-//  Serial.print("\tHumidity");
-//  format_output_humidity();
-//
-//  index = 8;  // In ASCII buffer, filtered value is offset from raw by 8 bytes
-//  Serial.print("\tTemperature");
-//  format_output_temp();
 
   index = 0;
   Serial.print("\tFiltered PPM");
@@ -102,31 +96,3 @@ int format_output_co2(void){ // read buffer, extract 6 ASCII chars, convert to P
   Serial.print(" PPM");
   Serial.print("\n");
  }
-
-int format_output_humidity(void){ // read buffer, extract 6 ASCII chars, convert to PPM and print
-  humidity = buffer[bufferMax-index++];
-  humidity += (buffer[bufferMax-index++])*10;
-  humidity += (buffer[bufferMax-index++])*100;
-  humidity += (buffer[bufferMax-index++])*1000;
-  humidity += (buffer[bufferMax-index++])*10000;
-  humidity /= 10;
-  Serial.print("\n Humidity = ");
-  Serial.print(humidity, DEC);
-  Serial.print("%");
-  Serial.print("\n");
- }
-
-int format_output_temp(void){ // read buffer, extract 6 ASCII chars, convert to PPM and print
-  temp = (int)buffer[bufferMax-index++];
-  temp += (int)(buffer[bufferMax-index++])*10;
-  temp += (int)(buffer[bufferMax-index++])*100;
-  temp += (int)(buffer[bufferMax-index++])*1000;
-  temp += (int)(buffer[bufferMax-index++])*10000;
-  temp -= 1000;
-  temp /= 10;
-  Serial.print("\n Temperature = ");
-  Serial.print(temp, DEC);
-  Serial.print(" C");
-  Serial.print("\n");
- }
-

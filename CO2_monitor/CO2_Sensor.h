@@ -5,6 +5,9 @@
 /**
  * 
  */
+
+#define bufferMax 7
+
 class CO2_Sensor
 {
 public:
@@ -18,7 +21,8 @@ private:
   uint8_t ind;
   uint8_t index;
   int co2;
-  int multiplier; // 1 for 2% = 20,000 PPM, 10 for 20% = 200,000
+  int multiplier; // 1 for 2% = 20,000 PPM, 10 for 20% = 200,000, 100 for 100%
+  int format_output_co2();
   SoftwareSerial *CO2_serial;
 };
 
@@ -55,7 +59,9 @@ void CO2_Sensor::fill_buffer()
  */
 void CO2_Sensor::read()
 {
+  mySerial.println("Z"); // send Mode Z outputs
   this->fill_buffer();
+  this->format_output_co2();
 }
 
 /**
@@ -63,11 +69,12 @@ void CO2_Sensor::read()
  */
 void CO2_Sensor::begin()
 {
-  this->multiplier = 1;
+  this->multiplier = 100;
   this->co2 = 0;
   this->ind = 0;
   this->index = 0;
   this->CO2_serial->begin(9600);
+  mySerial.println("K 2");  // set polling mode
 }
 
 /**
@@ -76,8 +83,23 @@ void CO2_Sensor::begin()
 CO2_Sensor::CO2_Sensor(SoftwareSerial *CO2_serial)
 {
   this->CO2_serial = CO2_serial;
-  this->multiplier = 1;
+  this->multiplier = 100;
   this->begin();
 }
+
+int CO2_Sensor::format_output_co2()
+{ 
+  // read buffer, extract 6 ASCII chars, convert to PPM and print
+  co2 = buffer[bufferMax-index++]-0x30;
+  co2 += (buffer[bufferMax-index++]-0x30)*10;
+  co2 += (buffer[bufferMax-index++]-0x30)*100;
+  co2 += (buffer[bufferMax-index++]-0x30)*1000;
+  co2 += (buffer[bufferMax-index++]-0x30)*10000;
+  Serial.print("\n CO2 = ");
+  Serial.print(co2*multiplier, 0);
+  Serial.print(" PPM");
+  Serial.print("\n");
+}
+
 
 #endif /*CO2_SENSOR_H*/
