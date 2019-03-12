@@ -80,13 +80,6 @@ void CO2_Sensor::begin()
 /**
  * 
  */
-CO2_Sensor::CO2_Sensor(SoftwareSerial *CO2_serial)
-{
-  this->CO2_serial = CO2_serial;
-  this->multiplier = 100;
-  this->begin();
-}
-
 int CO2_Sensor::format_output_co2()
 { 
   // read buffer, extract 6 ASCII chars, convert to PPM and print
@@ -101,5 +94,13 @@ int CO2_Sensor::format_output_co2()
   Serial.print("\n");
 }
 
+/**
+ * 
+ */
+CO2_Sensor::CO2_Sensor(SoftwareSerial *CO2_serial)
+{
+  this->CO2_serial = CO2_serial;
+  this->begin();
+}
 
 #endif /*CO2_SENSOR_H*/

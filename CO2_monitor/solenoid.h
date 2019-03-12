@@ -7,9 +7,10 @@ public:
    void open();
    void close();
    Solenoid();
+   Solenoid(int outputPin);
    ~Solenoid();
 private:
-
+  int outputPin;
 };
 
 /**
@@ -33,7 +34,17 @@ void Solenoid::close()
  */
 Solenoid::Solenoid()
 {
-   this->close();
+  outputPin = 0;
+  this->close();
+}
+
+/**
+ * 
+ */
+Solenoid::Solenoid(int outputPin)
+{
+  this->outputPin = outputPin;
+  this->close;
 }
 
 /**

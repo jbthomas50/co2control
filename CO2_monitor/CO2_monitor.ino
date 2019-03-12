@@ -24,6 +24,8 @@ LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7);
 uint8_t numFans = 1;
 Fans fans = Fans(8, 9, 10, 11);
 bool refreshDisplay = true;
+uint8_t solenoidPin = 7;
+uint8_t screenLightPin = 3;
 
 //Prototypes
 void writeToFile(void *pvParameters);
@@ -231,7 +233,7 @@ void readCO2_sensor(void *pvParameters)
 void manageCO2_levels(void *pvParameters)
 {
   //runs when function is called for the first time.
-  static Solenoid solenoid;
+//  static Solenoid solenoid;
   
   //runs forever.
   for(;;)
@@ -241,6 +243,14 @@ void manageCO2_levels(void *pvParameters)
       //TODO: Turn on solenoid here...
       if(xSemaphoreTake(xDisplayMutex, 500))
       {
+        if (CO2_target < CO2_level)
+        {
+          digitalWrite(solenoidPin, HIGH);
+        }
+        else 
+        {
+          digitalWrite(solenoidPin, LOW);
+        }
         xSemaphoreGive(xDisplayMutex);
       }
     }
