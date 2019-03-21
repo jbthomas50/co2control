@@ -2,6 +2,7 @@
 #include <Arduino_FreeRTOS.h>
 #include <semphr.h>
 #include <LiquidCrystal_I2C.h>
+#include <SoftwareSerial.h>
 
 //Project Libraries
 #include "fan.h"
@@ -20,6 +21,8 @@ SemaphoreHandle_t xSaveFileSignal;
 volatile unsigned long CO2_target = 100;
 volatile unsigned long CO2_level = 100;
 LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7);
+SoftwareSerial sensorSerial(12, 13); // RX, TX pins on Ardunio
+CO2_Sensor mySensor(&sensorSerial);   // Set up sensor with software serial object.
 uint8_t numFans = 1;
 Fans fans = Fans(8, 9, 10, 11);
 bool refreshDisplay = true;
@@ -95,7 +98,7 @@ void loop()
 {
   //Tasks during down time, or delays.
   uint8_t tempFans = numFans;
-  numFans = 3;/*map(analogRead(A0), 0, 1024, 0, 5);*/
+  numFans = map(analogRead(A0), 0, 1024, 0, 5);
   if (numFans != tempFans)
   {
     fans.on(numFans);
@@ -187,11 +190,12 @@ void readCO2_sensor(void *pvParameters)
   //runs forever
   for(;;)
   {
-    //TODO: Read sensor here...
-    tempLevel = 1000;
+    // Read sensor here...
+    mySensor.read();
+    tempLevel = mySensor.getCO2();
 
-    //READ USER INPUT
-    tempTarget = 2000; /*(map(analogRead(A0), 0, 1023, 0, 101) * 100) + (map(analogRead(A1), 0, 1023, 1, 101) * 10000);*/
+    // READ USER INPUT
+    tempTarget = (map(analogRead(A2), 0, 1023, 0, 101) * 100) + (map(analogRead(A1), 0, 1023, 1, 101) * 10000);
     
     if(tempTarget >= tempLevel)
     {

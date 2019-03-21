@@ -59,7 +59,7 @@ void CO2_Sensor::fill_buffer()
  */
 void CO2_Sensor::read()
 {
-  this->CO2_serial->println("Z"); // send Mode Z outputs
+  this->CO2_serial->println("Z"); // send Mode Z outputs for filtered Co2 reading
   this->fill_buffer();
   this->format_output_co2();
 }
