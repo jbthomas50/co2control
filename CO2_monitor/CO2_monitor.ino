@@ -20,7 +20,8 @@ SemaphoreHandle_t xSaveFileSignal;
 //GLOBAL VARIABLES
 volatile unsigned long CO2_target = 100;
 volatile unsigned long CO2_level = 100;
-LiquidCrystal_I2C lcd(0x27,2,1,0,4,5,6,7);
+LiquidCrystal_I2C lcd2(0x27,2,1,0,4,5,6,7);
+LiquidCrystal_I2C lcd1(0x20,2,1,0,4,5,6,7);
 SoftwareSerial sensorSerial(12, 13); // RX, TX pins on Ardunio
 CO2_Sensor mySensor(&sensorSerial);   // Set up sensor with software serial object.
 uint8_t numFans = 1;
@@ -99,6 +100,7 @@ void loop()
   //Tasks during down time, or delays.
   uint8_t tempFans = numFans;
   numFans = map(analogRead(A0), 0, 1024, 0, 5);
+
   if (numFans != tempFans)
   {
     fans.on(numFans);
@@ -107,14 +109,20 @@ void loop()
 
   if(refreshDisplay)
   {
-    lcd.setCursor(4, 0);
-    lcd.print(CO2_level);
+    // Reset screen
+    lcd2.setCursor(4, 0);
+    lcd2.print("          ");
+    lcd2.setCursor(4, 1);
+    lcd2.print("          ");
+
+    lcd2.setCursor(4, 0);
+    lcd2.print(CO2_level);
   
-    lcd.setCursor(4, 1);
-    lcd.print(CO2_target);
+    lcd2.setCursor(4, 1);
+    lcd2.print(CO2_target);
   
-    lcd.setCursor(15, 1);
-    lcd.print(numFans);
+    lcd1.setCursor(6, 1);
+    lcd1.print(numFans);
 
     refreshDisplay = false;
   }
@@ -122,16 +130,22 @@ void loop()
 
 void setUpHardware()
 {
-  lcd.begin(16,2);
-  lcd.clear();
-  lcd.home();
-  lcd.print(F("ACT: "));
-  lcd.setCursor(12, 0);
-  lcd.print(F("|FANS"));
-  lcd.setCursor(0,1);
-  lcd.print(F("SET: "));
-  lcd.setCursor(12, 1);
-  lcd.print(F("|   "));
+  // LCD 1
+  lcd1.begin(16,2);
+  lcd1.clear();
+  lcd1.home();
+  // LCD 2
+  lcd2.begin(16,2);
+  lcd2.clear();
+  lcd2.home();
+  
+  lcd2.print(F("ACT: "));
+  lcd2.setCursor(0,1);
+  lcd2.print(F("SET: "));
+
+  lcd1.print("Control Station");
+  lcd1.setCursor(0, 1);
+  lcd1.print(F("FANS: "));
     
   pinMode(A0, INPUT);
   pinMode(A1, INPUT);
@@ -156,6 +170,7 @@ void writeToCloud(void *pvParameters)
       }
      }
   }
+  Serial.println("written to cloud");
 }
 
 /**
@@ -177,6 +192,7 @@ void writeToFile(void *pvParameters)
       }
      }
   }
+  Serial.println("Written to file");
 }
 
 /**
@@ -195,7 +211,7 @@ void readCO2_sensor(void *pvParameters)
     tempLevel = mySensor.getCO2();
 
     // READ USER INPUT
-    tempTarget = (map(analogRead(A2), 0, 1023, 0, 101) * 100) + (map(analogRead(A1), 0, 1023, 1, 101) * 10000);
+    tempTarget = (map(analogRead(A2), 0, 1023, 0, 101) * 1) + (map(analogRead(A1), 0, 1023, 1, 101) * 100);
     
     if(tempTarget >= tempLevel)
     {
@@ -227,6 +243,7 @@ void readCO2_sensor(void *pvParameters)
 
     vTaskDelay(500/*in ms*/ / portTICK_PERIOD_MS);
   }
+
 }
 
 /**
@@ -235,27 +252,25 @@ void readCO2_sensor(void *pvParameters)
  */
 void manageCO2_levels(void *pvParameters)
 {
-  //runs when function is called for the first time.
-//  static Solenoid solenoid;
-  
   //runs forever.
   for(;;)
   {
-    if(xSemaphoreTake(xManageSignal, portMAX_DELAY))
-    {
+//    if(xSemaphoreTake(xManageSignal, portMAX_DELAY))
+//    {
       //TODO: Turn on solenoid here...
-      if(xSemaphoreTake(xDisplayMutex, 500))
-      {
+//      if(xSemaphoreTake(xDisplayMutex, 500))
+//      {
         if (CO2_target < CO2_level)
         {
-          digitalWrite(solenoidPin, HIGH);
+          digitalWrite(solenoidPin, LOW);
+          Serial.println("Solenoid turned off *************************");
         }
         else 
         {
-          digitalWrite(solenoidPin, LOW);
+          digitalWrite(solenoidPin, HIGH);
         }
-        xSemaphoreGive(xDisplayMutex);
-      }
-    }
+//        xSemaphoreGive(xDisplayMutex);
+//      }
+//    }
   }
 }

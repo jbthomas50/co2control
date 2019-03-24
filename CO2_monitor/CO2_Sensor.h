@@ -59,8 +59,21 @@ void CO2_Sensor::fill_buffer()
  */
 void CO2_Sensor::read()
 {
-  this->CO2_serial->println("Z"); // send Mode Z outputs for filtered Co2 reading
+  for(int i = 0; i < bufferMax; i++)
+  {
+    buffer[i] = ' ';
+  }
+  this->CO2_serial->println("Z"); // send Mode Z outputs for filtered C02 reading
   this->fill_buffer();
+  Serial.print("Buffer contains: ");
+  for(int j=0; j<ind; j++)
+  {
+    Serial.print((char)buffer[j]);
+  }
+  Serial.print("\n");
+
+  index = 0;
+  Serial.print("\tFiltered PPM");
   this->format_output_co2();
 }
 
@@ -88,10 +101,10 @@ int CO2_Sensor::format_output_co2()
   co2 += (buffer[bufferMax-index++]-0x30)*100;
   co2 += (buffer[bufferMax-index++]-0x30)*1000;
   co2 += (buffer[bufferMax-index++]-0x30)*10000;
-//  Serial.print("\n CO2 = ");
-//  Serial.print(co2*multiplier, 0);
-//  Serial.print(" PPM");
-//  Serial.print("\n");
+  Serial.print("\n CO2 = ");
+  Serial.print(co2*multiplier);
+  Serial.print(" PPM");
+  Serial.print("\n");
 }
 
 /**
