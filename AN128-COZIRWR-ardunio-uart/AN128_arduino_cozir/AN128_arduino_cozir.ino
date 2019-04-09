@@ -39,7 +39,7 @@ void setup() {
   // "H xxxxx T xxxxx Z xxxxx" (humidity, temperature, and filtered CO2 level)
   mySerial.println("K 2");  // set polling mode
 //  delay(100000);
-//  mySerial.println("Z");
+  mySerial.println("X 20");
 }
 
 void loop() {
@@ -47,7 +47,7 @@ void loop() {
   {
     buffer[i] = ' ';
   }
-  mySerial.println("Z");// send Mode for H, T, and Z outputs
+  mySerial.println("Z");// send Mode Z outputs
   // "H xxxxx T xxxxx Z xxxxx" (humidity, temperature, and filtered CO2 level)
   fill_buffer();  // function call that reads CO2 sensor and fills buffer
  
