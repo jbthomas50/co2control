@@ -1,3 +1,36 @@
+/******************************************************************
+ * CO2 control project
+ * Features:
+ *    Co2 sensor
+ *    User set desired co2 level
+ *    Autonomously controlled solenoid
+ *    Four fans to mix air
+ *    User set number of fans running
+ *    Two lcd screens to display information
+ *    Button to turn on/off screen backlights
+ *    Write to SD card and google docs
+ * Written by:
+ *    Zac Carico and James Thomas
+ *****************************************************************/
+
+/******************************************************************
+ *  Arduino Setup:
+ *    Digital Pins:
+ *      Wifi:                   0(Rx), 1(Tx)
+ *      Screen Light Interrupt: 3
+ *      ScreenLight:            4
+ *      Solenoid:               7
+ *      Fans:                   8, 9 , 10, 11
+ *      CO2 sensor:             12(Rx), 13(Tx)
+ *      **Free:                 2, 5, 6
+ * 
+ *    Analog Pins:
+ *      Fan Pot:                0 
+ *      CO2 Pots:               1, 2
+ *      I2c:                    4(SDA), 5(SCL) // SD card, screens
+ *      **Free:                 3
+ *****************************************************************/
+
 //Arduino Libraries
 #include <Arduino_FreeRTOS.h>
 #include <semphr.h>
@@ -22,13 +55,15 @@ volatile unsigned long CO2_target = 100;
 volatile unsigned long CO2_level = 100;
 LiquidCrystal_I2C lcd2(0x27,2,1,0,4,5,6,7);
 LiquidCrystal_I2C lcd1(0x20,2,1,0,4,5,6,7);
-SoftwareSerial sensorSerial(12, 13); // RX, TX pins on Ardunio
-CO2_Sensor mySensor(&sensorSerial);   // Set up sensor with software serial object.
+SoftwareSerial sensorSerial(12, 13);        // RX, TX pins on Ardunio
+CO2_Sensor mySensor(&sensorSerial);         // Set up sensor with software serial object.
 uint8_t numFans = 1;
 Fans fans = Fans(8, 9, 10, 11);
 bool refreshDisplay = true;
+volatile byte  screenLightOn = LOW;
 uint8_t solenoidPin = 7;
-uint8_t screenLightPin = 3;
+uint8_t screenLightInterrupt = 3;
+uint8_t screenLightPin = 4;
 
 //Prototypes
 void writeToFile(void *pvParameters);
@@ -36,6 +71,18 @@ void writeToCloud(void *pvParameters);
 void readCO2_sensor(void *pvParameters);
 void manageCO2_levels(void *pvParameters);
 void setUpHardware();
+
+void toggleScreenLight()
+{
+  static unsigned long last_interrupt_time = 0;
+  unsigned long interrupt_time = millis();
+  if (interrupt_time - last_interrupt_time > 200)
+  {
+    screenLightOn = !screenLightOn;
+    digitalWrite(screenLightPin, screenLightOn);
+  }
+  last_interrupt_time = interrupt_time;
+}
 
 void setup() 
 {
@@ -97,6 +144,7 @@ void setup()
 
 void loop() 
 {
+  Serial.println("Looping");
   //Tasks during down time, or delays.
   uint8_t tempFans = numFans;
   numFans = map(analogRead(A0), 0, 1024, 0, 5);
@@ -130,11 +178,16 @@ void loop()
 
 void setUpHardware()
 {
-  // LCD 1
+  // LCD 1 (left side)
   lcd1.begin(16,2);
   lcd1.clear();
   lcd1.home();
-  // LCD 2
+  
+  lcd1.print("Control Station");
+  lcd1.setCursor(0, 1);
+  lcd1.print(F("FANS: "));
+  
+  // LCD 2 (right side)
   lcd2.begin(16,2);
   lcd2.clear();
   lcd2.home();
@@ -143,12 +196,15 @@ void setUpHardware()
   lcd2.setCursor(0,1);
   lcd2.print(F("SET: "));
 
-  lcd1.print("Control Station");
-  lcd1.setCursor(0, 1);
-  lcd1.print(F("FANS: "));
     
-  pinMode(A0, INPUT);
-  pinMode(A1, INPUT);
+  pinMode(A0, INPUT);                   // fan control (left)
+  pinMode(A1, INPUT);                   // CO2 1 million (middle)
+  pinMode(A2, INPUT);                   // CO2 10 thousand (right)
+  pinMode(solenoidPin, OUTPUT);
+  pinMode(screenLightInterrupt, INPUT);
+  pinMode(screenLightPin, OUTPUT);
+  // button for screen backlight handled by interrupt
+  attachInterrupt(digitalPinToInterrupt(screenLightInterrupt), toggleScreenLight, RISING);
 }
 
 /**
@@ -206,36 +262,38 @@ void readCO2_sensor(void *pvParameters)
   //runs forever
   for(;;)
   {
+    Serial.println("reading co2");
     // Read sensor here...
     mySensor.read();
     tempLevel = mySensor.getCO2();
 
     // READ USER INPUT
-    tempTarget = (map(analogRead(A2), 0, 1023, 0, 101) * 1) + (map(analogRead(A1), 0, 1023, 1, 101) * 100);
+    tempTarget = (map(analogRead(A2), 0, 1023, 0, 100) * 100) + (map(analogRead(A1), 0, 1023, 1, 100) * 10000);
     
     if(tempTarget >= tempLevel)
     {
       xSemaphoreGive(xManageSignal);
     }
-
     if(xSemaphoreTake(xLevelMutex, 1000))
     {
       if(CO2_level != tempLevel)
         refreshDisplay = true;
         
       CO2_level = tempLevel;
+      Serial.print("CO2 level: ");
+      Serial.println(CO2_level);
       xSemaphoreGive(xLevelMutex);
     }
-
     if(xSemaphoreTake(xTargetMutex, 1000))
     {
       if(CO2_target != tempTarget)
         refreshDisplay = true;
         
       CO2_target = tempTarget;
+      Serial.print("CO2 target: ");
+      Serial.println(CO2_target);
       xSemaphoreGive(xTargetMutex);
     }
-
     if(xSemaphoreTake(xDisplayMutex, 500))
     {
       xSemaphoreGive(xDisplayMutex);
@@ -243,7 +301,6 @@ void readCO2_sensor(void *pvParameters)
 
     vTaskDelay(500/*in ms*/ / portTICK_PERIOD_MS);
   }
-
 }
 
 /**
@@ -255,22 +312,23 @@ void manageCO2_levels(void *pvParameters)
   //runs forever.
   for(;;)
   {
-//    if(xSemaphoreTake(xManageSignal, portMAX_DELAY))
-//    {
+    Serial.println("managing co2");
+    if(xSemaphoreTake(xManageSignal, portMAX_DELAY))
+    {
       //TODO: Turn on solenoid here...
-//      if(xSemaphoreTake(xDisplayMutex, 500))
-//      {
+      if(xSemaphoreTake(xDisplayMutex, 500))
+      {
         if (CO2_target < CO2_level)
         {
           digitalWrite(solenoidPin, LOW);
-          Serial.println("Solenoid turned off *************************");
         }
-        else 
+        else
         {
           digitalWrite(solenoidPin, HIGH);
         }
-//        xSemaphoreGive(xDisplayMutex);
-//      }
-//    }
+        xSemaphoreGive(xDisplayMutex);
+      }
+    }
+    vTaskDelay(500/*in ms*/ / portTICK_PERIOD_MS);
   }
 }

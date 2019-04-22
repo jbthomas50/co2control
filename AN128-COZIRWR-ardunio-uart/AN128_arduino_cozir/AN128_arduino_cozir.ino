@@ -38,8 +38,8 @@ void setup() {
   mySerial.println("Z");// send Mode for H, T, and Z outputs
   // "H xxxxx T xxxxx Z xxxxx" (humidity, temperature, and filtered CO2 level)
   mySerial.println("K 2");  // set polling mode
-//  delay(100000);
-  mySerial.println("X 20");
+  delay(1000);
+//  mySerial.println("X 20");
 }
 
 void loop() {
