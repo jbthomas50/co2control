@@ -17,10 +17,11 @@
  *  Arduino Setup:
  *    Digital Pins:
  *      Wifi:                   0(Rx), 1(Tx)
+ *      Fans:                   2, 3, 4, 5 
  *      Solenoid:               7
- *      Fans:                   8, 9 , 10, 11
+ *      SD card chip Select:    10
  *      CO2 sensor:             12(Rx), 13(Tx)
- *      **Free:                 2, 3, 4, 5, 6
+ *      **Free:                 6, 8, 9, 11
  * 
  *    Analog Pins:
  *      Fan Pot:                0 
@@ -56,7 +57,7 @@ LiquidCrystal_I2C lcd1(0x20,2,1,0,4,5,6,7);
 SoftwareSerial sensorSerial(12, 13);        // RX, TX pins on Ardunio
 CO2_Sensor mySensor(&sensorSerial);         // Set up sensor with software serial object.
 uint8_t numFans = 1;
-Fans fans = Fans(8, 9, 10, 11);
+Fans fans = Fans(2, 3, 4, 5);
 bool refreshDisplay = true;
 //volatile byte  screenLightOn = LOW;
 uint8_t solenoidPin = 7;
