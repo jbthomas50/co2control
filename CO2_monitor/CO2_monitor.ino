@@ -17,12 +17,10 @@
  *  Arduino Setup:
  *    Digital Pins:
  *      Wifi:                   0(Rx), 1(Tx)
- *      Screen Light Interrupt: 3
- *      ScreenLight:            4
  *      Solenoid:               7
  *      Fans:                   8, 9 , 10, 11
  *      CO2 sensor:             12(Rx), 13(Tx)
- *      **Free:                 2, 5, 6
+ *      **Free:                 2, 3, 4, 5, 6
  * 
  *    Analog Pins:
  *      Fan Pot:                0 
@@ -60,10 +58,10 @@ CO2_Sensor mySensor(&sensorSerial);         // Set up sensor with software seria
 uint8_t numFans = 1;
 Fans fans = Fans(8, 9, 10, 11);
 bool refreshDisplay = true;
-volatile byte  screenLightOn = LOW;
+//volatile byte  screenLightOn = LOW;
 uint8_t solenoidPin = 7;
-uint8_t screenLightInterrupt = 3;
-uint8_t screenLightPin = 4;
+//uint8_t screenLightInterrupt = 3;
+//uint8_t screenLightPin = 4;
 
 //Prototypes
 void writeToFile(void *pvParameters);
@@ -72,17 +70,17 @@ void readCO2_sensor(void *pvParameters);
 void manageCO2_levels(void *pvParameters);
 void setUpHardware();
 
-void toggleScreenLight()
-{
-  static unsigned long last_interrupt_time = 0;
-  unsigned long interrupt_time = millis();
-  if (interrupt_time - last_interrupt_time > 200)
-  {
-    screenLightOn = !screenLightOn;
-    digitalWrite(screenLightPin, screenLightOn);
-  }
-  last_interrupt_time = interrupt_time;
-}
+//void toggleScreenLight()
+//{
+//  static unsigned long last_interrupt_time = 0;
+//  unsigned long interrupt_time = millis();
+//  if (interrupt_time - last_interrupt_time > 200)
+//  {
+//    screenLightOn = !screenLightOn;
+//    digitalWrite(screenLightPin, screenLightOn);
+//  }
+//  last_interrupt_time = interrupt_time;
+//}
 
 void setup() 
 {
@@ -144,7 +142,7 @@ void setup()
 
 void loop() 
 {
-  Serial.println("Looping");
+//  Serial.println("Looping");
   //Tasks during down time, or delays.
   uint8_t tempFans = numFans;
   numFans = map(analogRead(A0), 0, 1024, 0, 5);
@@ -201,10 +199,10 @@ void setUpHardware()
   pinMode(A1, INPUT);                   // CO2 1 million (middle)
   pinMode(A2, INPUT);                   // CO2 10 thousand (right)
   pinMode(solenoidPin, OUTPUT);
-  pinMode(screenLightInterrupt, INPUT);
-  pinMode(screenLightPin, OUTPUT);
+//  pinMode(screenLightInterrupt, INPUT);
+//  pinMode(screenLightPin, OUTPUT);
   // button for screen backlight handled by interrupt
-  attachInterrupt(digitalPinToInterrupt(screenLightInterrupt), toggleScreenLight, RISING);
+//  attachInterrupt(digitalPinToInterrupt(screenLightInterrupt), toggleScreenLight, RISING);
 }
 
 /**
@@ -262,7 +260,7 @@ void readCO2_sensor(void *pvParameters)
   //runs forever
   for(;;)
   {
-    Serial.println("reading co2");
+//    Serial.println("reading co2");
     // Read sensor here...
     mySensor.read();
     tempLevel = mySensor.getCO2();
@@ -280,8 +278,8 @@ void readCO2_sensor(void *pvParameters)
         refreshDisplay = true;
         
       CO2_level = tempLevel;
-      Serial.print("CO2 level: ");
-      Serial.println(CO2_level);
+//      Serial.print("CO2 level: ");
+//      Serial.println(CO2_level);
       xSemaphoreGive(xLevelMutex);
     }
     if(xSemaphoreTake(xTargetMutex, 1000))
@@ -290,14 +288,14 @@ void readCO2_sensor(void *pvParameters)
         refreshDisplay = true;
         
       CO2_target = tempTarget;
-      Serial.print("CO2 target: ");
-      Serial.println(CO2_target);
+//      Serial.print("CO2 target: ");
+//      Serial.println(CO2_target);
       xSemaphoreGive(xTargetMutex);
     }
-    if(xSemaphoreTake(xDisplayMutex, 500))
-    {
-      xSemaphoreGive(xDisplayMutex);
-    }
+//    if(xSemaphoreTake(xDisplayMutex, 500))
+//    {
+//      xSemaphoreGive(xDisplayMutex);
+//    }
 
     vTaskDelay(500/*in ms*/ / portTICK_PERIOD_MS);
   }
@@ -312,7 +310,7 @@ void manageCO2_levels(void *pvParameters)
   //runs forever.
   for(;;)
   {
-    Serial.println("managing co2");
+//    Serial.println("managing co2");
     if(xSemaphoreTake(xManageSignal, portMAX_DELAY))
     {
       //TODO: Turn on solenoid here...
