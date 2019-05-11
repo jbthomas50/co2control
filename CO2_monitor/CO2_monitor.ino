@@ -17,10 +17,11 @@
  *  Arduino Setup:
  *    Digital Pins:
  *      Wifi:                   0(Rx), 1(Tx)
+ *      Fans:                   2, 3, 4, 5 
  *      Solenoid:               7
- *      Fans:                   8, 9 , 10, 11
+ *      SD card chip Select:    10
  *      CO2 sensor:             12(Rx), 13(Tx)
- *      **Free:                 2, 3, 4, 5, 6
+ *      **Free:                 6, 8, 9, 11
  * 
  *    Analog Pins:
  *      Fan Pot:                0 
@@ -34,8 +35,13 @@
 #include <semphr.h>
 #include <LiquidCrystal_I2C.h>
 #include <SoftwareSerial.h>
+<<<<<<< HEAD
 #include <SD.h>
 #include <EEPROM.h>
+=======
+#include <SPI.h>
+#include <SD.h>
+>>>>>>> b5e45a3e7c22ed17c7536e202c014e1075504b50
 
 //Project Libraries
 #include "fan.h"
@@ -58,10 +64,12 @@ LiquidCrystal_I2C lcd1(0x20,2,1,0,4,5,6,7);
 SoftwareSerial sensorSerial(12, 13);        // RX, TX pins on Ardunio
 CO2_Sensor mySensor(&sensorSerial);         // Set up sensor with software serial object.
 uint8_t numFans = 1;
-Fans fans = Fans(8, 9, 10, 11);
+Fans fans = Fans(2, 3, 4, 5);
 bool refreshDisplay = true;
 uint8_t solenoidPin = 7;
+<<<<<<< HEAD
 String fileName;
+const int chipSelect = 10;                  // Pin 10 for our data logger
 
 //Prototypes
 void writeToFile(void *pvParameters);
@@ -231,7 +239,9 @@ void writeToFile(void *pvParameters)
     file.print(CO2_target);
     file.print(", ");
     file.print(CO2_level);
+    file.close();
     count++;
+    
     vTaskDelay(300000/*in ms*/ / portTICK_PERIOD_MS);
   }
 }
