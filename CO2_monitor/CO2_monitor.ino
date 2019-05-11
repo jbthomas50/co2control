@@ -46,7 +46,7 @@ SemaphoreHandle_t xDisplayMutex;
 SemaphoreHandle_t xManageSignal;
 SemaphoreHandle_t xSaveCloudSignal;
 SemaphoreHandle_t xSaveFileSignal;
-//QueueHandle_t xDisplayQueue;
+// QueueHandle_t xDisplayQueue;
 
 //GLOBAL VARIABLES
 volatile unsigned long CO2_target = 100;
@@ -58,10 +58,7 @@ CO2_Sensor mySensor(&sensorSerial);         // Set up sensor with software seria
 uint8_t numFans = 1;
 Fans fans = Fans(8, 9, 10, 11);
 bool refreshDisplay = true;
-//volatile byte  screenLightOn = LOW;
 uint8_t solenoidPin = 7;
-//uint8_t screenLightInterrupt = 3;
-//uint8_t screenLightPin = 4;
 
 //Prototypes
 void writeToFile(void *pvParameters);
@@ -69,18 +66,6 @@ void writeToCloud(void *pvParameters);
 void readCO2_sensor(void *pvParameters);
 void manageCO2_levels(void *pvParameters);
 void setUpHardware();
-
-//void toggleScreenLight()
-//{
-//  static unsigned long last_interrupt_time = 0;
-//  unsigned long interrupt_time = millis();
-//  if (interrupt_time - last_interrupt_time > 200)
-//  {
-//    screenLightOn = !screenLightOn;
-//    digitalWrite(screenLightPin, screenLightOn);
-//  }
-//  last_interrupt_time = interrupt_time;
-//}
 
 void setup() 
 {
@@ -136,13 +121,12 @@ void setup()
               100, NULL, 3, NULL);
 //   xTaskCreate(writeToCloud, "wrt2cld", 
 //               100, NULL, 1, NULL);
-//   xTaskCreate(writeToFile, "wrt2FL", 
-//               100, NULL, 1, NULL);
+   xTaskCreate(writeToFile, "wrt2FL", 
+               100, NULL, 1, NULL);
 }
 
 void loop() 
 {
-//  Serial.println("Looping");
   //Tasks during down time, or delays.
   uint8_t tempFans = numFans;
   numFans = map(analogRead(A0), 0, 1024, 0, 5);
@@ -199,10 +183,6 @@ void setUpHardware()
   pinMode(A1, INPUT);                   // CO2 1 million (middle)
   pinMode(A2, INPUT);                   // CO2 10 thousand (right)
   pinMode(solenoidPin, OUTPUT);
-//  pinMode(screenLightInterrupt, INPUT);
-//  pinMode(screenLightPin, OUTPUT);
-  // button for screen backlight handled by interrupt
-//  attachInterrupt(digitalPinToInterrupt(screenLightInterrupt), toggleScreenLight, RISING);
 }
 
 /**
@@ -260,7 +240,6 @@ void readCO2_sensor(void *pvParameters)
   //runs forever
   for(;;)
   {
-//    Serial.println("reading co2");
     // Read sensor here...
     mySensor.read();
     tempLevel = mySensor.getCO2();
@@ -278,8 +257,6 @@ void readCO2_sensor(void *pvParameters)
         refreshDisplay = true;
         
       CO2_level = tempLevel;
-//      Serial.print("CO2 level: ");
-//      Serial.println(CO2_level);
       xSemaphoreGive(xLevelMutex);
     }
     if(xSemaphoreTake(xTargetMutex, 1000))
@@ -288,14 +265,8 @@ void readCO2_sensor(void *pvParameters)
         refreshDisplay = true;
         
       CO2_target = tempTarget;
-//      Serial.print("CO2 target: ");
-//      Serial.println(CO2_target);
       xSemaphoreGive(xTargetMutex);
     }
-//    if(xSemaphoreTake(xDisplayMutex, 500))
-//    {
-//      xSemaphoreGive(xDisplayMutex);
-//    }
 
     vTaskDelay(500/*in ms*/ / portTICK_PERIOD_MS);
   }
@@ -310,7 +281,6 @@ void manageCO2_levels(void *pvParameters)
   //runs forever.
   for(;;)
   {
-//    Serial.println("managing co2");
     if(xSemaphoreTake(xManageSignal, portMAX_DELAY))
     {
       //TODO: Turn on solenoid here...
