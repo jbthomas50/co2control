@@ -35,6 +35,8 @@
 #include <semphr.h>
 #include <LiquidCrystal_I2C.h>
 #include <SoftwareSerial.h>
+#include <SPI.h>
+#include <SD.h>
 
 //Project Libraries
 #include "fan.h"
@@ -60,6 +62,7 @@ uint8_t numFans = 1;
 Fans fans = Fans(2, 3, 4, 5);
 bool refreshDisplay = true;
 uint8_t solenoidPin = 7;
+const int chipSelect = 10;                  // Pin 10 for our data logger
 
 //Prototypes
 void writeToFile(void *pvParameters);
@@ -221,10 +224,19 @@ void writeToFile(void *pvParameters)
     //TODO: Write to SD card here...
      if(xSemaphoreTake(xSaveFileSignal, portMAX_DELAY))
      {
-      if(xSemaphoreTake(xDisplayMutex, 1000))
-      {
+        if(xSemaphoreTake(xDisplayMutex, 1000))
+        {
+          File dataFile = SD.open(fileName, FILE_WRITE);
+
+          // if the file is available, write to it:
+          if (dataFile) {
+            dataFile.println(dataString);
+            dataFile.close();
+            // print to the serial port too:
+            Serial.println(dataString);
+          }
         Serial.println(F("FILE"));
-      }
+        }
      }
   }
   Serial.println("Written to file");
