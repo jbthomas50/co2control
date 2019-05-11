@@ -231,6 +231,7 @@ void writeToFile(void *pvParameters)
     file.print(CO2_target);
     file.print(", ");
     file.print(CO2_level);
+    count++;
     vTaskDelay(300000/*in ms*/ / portTICK_PERIOD_MS);
   }
 }
