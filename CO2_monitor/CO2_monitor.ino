@@ -19,9 +19,8 @@
  *      Wifi:                   0(Rx), 1(Tx)
  *      Fans:                   2, 3, 4, 5 
  *      Solenoid:               7
- *      SD card chip Select:    10
  *      CO2 sensor:             12(Rx), 13(Tx)
- *      **Free:                 6, 8, 9, 11
+ *      **Free:                 6, 8, 9, 10, 11
  * 
  *    Analog Pins:
  *      Fan Pot:                0 
@@ -35,8 +34,6 @@
 #include <semphr.h>
 #include <LiquidCrystal_I2C.h>
 #include <SoftwareSerial.h>
-#include <SPI.h>
-#include <SD.h>
 
 //Project Libraries
 #include "fan.h"
@@ -45,10 +42,6 @@
 //SEMAPHORES
 SemaphoreHandle_t xLevelMutex;
 SemaphoreHandle_t xTargetMutex;
-SemaphoreHandle_t xDisplayMutex;
-SemaphoreHandle_t xManageSignal;
-SemaphoreHandle_t xSaveCloudSignal;
-SemaphoreHandle_t xSaveFileSignal;
 // QueueHandle_t xDisplayQueue;
 
 //GLOBAL VARIABLES
@@ -58,15 +51,13 @@ LiquidCrystal_I2C lcd2(0x27,2,1,0,4,5,6,7);
 LiquidCrystal_I2C lcd1(0x20,2,1,0,4,5,6,7);
 SoftwareSerial sensorSerial(12, 13);        // RX, TX pins on Ardunio
 CO2_Sensor mySensor(&sensorSerial);         // Set up sensor with software serial object.
-uint8_t numFans = 1;
+uint8_t numFans = 0;
 Fans fans = Fans(2, 3, 4, 5);
 bool refreshDisplay = true;
 uint8_t solenoidPin = 7;
-const int chipSelect = 10;                  // Pin 10 for our data logger
 
 //Prototypes
-void writeToFile(void *pvParameters);
-void writeToCloud(void *pvParameters);
+//void writeToCloud(void *pvParameters);
 void readCO2_sensor(void *pvParameters);
 void manageCO2_levels(void *pvParameters);
 void setUpHardware();
@@ -95,38 +86,12 @@ void setup()
     }
   }
 
-  if(xDisplayMutex == NULL)
-  {
-    xDisplayMutex = xSemaphoreCreateMutex();
-    if( (xDisplayMutex) != NULL)
-    {
-      xSemaphoreGive((xDisplayMutex));
-    }
-  }
-
-  if(xManageSignal == NULL)
-  {
-    vSemaphoreCreateBinary(xManageSignal);
-  }
-
-  if(xSaveCloudSignal == NULL)
-  {
-    vSemaphoreCreateBinary(xSaveCloudSignal);
-  }
-
-  if(xSaveFileSignal == NULL)
-  {
-    vSemaphoreCreateBinary(xSaveFileSignal);
-  }
-  
   xTaskCreate(manageCO2_levels, "mngCO2", 
               100, NULL, 3, NULL);
   xTaskCreate(readCO2_sensor, "rdCO2", 
               100, NULL, 3, NULL);
 //   xTaskCreate(writeToCloud, "wrt2cld", 
 //               100, NULL, 1, NULL);
-   xTaskCreate(writeToFile, "wrt2FL", 
-               100, NULL, 1, NULL);
 }
 
 void loop() 
@@ -134,13 +99,12 @@ void loop()
   //Tasks during down time, or delays.
   uint8_t tempFans = numFans;
   numFans = map(analogRead(A0), 0, 1024, 0, 5);
-
+  Serial.println(numFans);
   if (numFans != tempFans)
   {
     fans.on(numFans);
     refreshDisplay = true;
   }
-
   if(refreshDisplay)
   {
     // Reset screen
@@ -182,7 +146,6 @@ void setUpHardware()
   lcd2.setCursor(0,1);
   lcd2.print(F("SET: "));
 
-    
   pinMode(A0, INPUT);                   // fan control (left)
   pinMode(A1, INPUT);                   // CO2 1 million (middle)
   pinMode(A2, INPUT);                   // CO2 10 thousand (right)
@@ -200,46 +163,8 @@ void writeToCloud(void *pvParameters)
   for(;;)
   {
     //TODO: Write to cloud here... 
-     if(xSemaphoreTake(xSaveCloudSignal, portMAX_DELAY))
-     {
-      if(xSemaphoreTake(xDisplayMutex, 1000))
-      {
-//        Serial.println(F("FILE"));
-      }
-     }
   }
 //  Serial.println("written to cloud");
-}
-
-/**
- * Writes to SD card (Should make this a time interupt)
- */
-void writeToFile(void *pvParameters)
-{
-  //runs when function is called for the first time.
-
-  //runs forever
-  for(;;)
-  {
-    //TODO: Write to SD card here...
-     if(xSemaphoreTake(xSaveFileSignal, portMAX_DELAY))
-     {
-        if(xSemaphoreTake(xDisplayMutex, 1000))
-        {
-          File dataFile = SD.open(fileName, FILE_WRITE);
-
-          // if the file is available, write to it:
-          if (dataFile) {
-            dataFile.println(dataString);
-            dataFile.close();
-            // print to the serial port too:
-//            Serial.println(dataString);
-          }
-//        Serial.println(F("FILE"));
-        }
-     }
-  }
-//  Serial.println("Written to file");
 }
 
 /**
@@ -260,10 +185,6 @@ void readCO2_sensor(void *pvParameters)
     // READ USER INPUT
     tempTarget = (map(analogRead(A2), 0, 1023, 0, 100) * 100) + (map(analogRead(A1), 0, 1023, 1, 100) * 10000);
     
-    if(tempTarget >= tempLevel)
-    {
-      xSemaphoreGive(xManageSignal);
-    }
     if(xSemaphoreTake(xLevelMutex, 1000))
     {
       if(CO2_level != tempLevel)
@@ -294,21 +215,14 @@ void manageCO2_levels(void *pvParameters)
   //runs forever.
   for(;;)
   {
-    if(xSemaphoreTake(xManageSignal, portMAX_DELAY))
+    //TODO: Turn on solenoid here...
+    if (CO2_target < CO2_level)
     {
-      //TODO: Turn on solenoid here...
-      if(xSemaphoreTake(xDisplayMutex, 500))
-      {
-        if (CO2_target < CO2_level)
-        {
-          digitalWrite(solenoidPin, LOW);
-        }
-        else
-        {
-          digitalWrite(solenoidPin, HIGH);
-        }
-        xSemaphoreGive(xDisplayMutex);
-      }
+      digitalWrite(solenoidPin, LOW);
+    }
+    else
+    {
+      digitalWrite(solenoidPin, HIGH);
     }
     vTaskDelay(500/*in ms*/ / portTICK_PERIOD_MS);
   }
