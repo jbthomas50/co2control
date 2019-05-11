@@ -204,11 +204,11 @@ void writeToCloud(void *pvParameters)
      {
       if(xSemaphoreTake(xDisplayMutex, 1000))
       {
-        Serial.println(F("FILE"));
+//        Serial.println(F("FILE"));
       }
      }
   }
-  Serial.println("written to cloud");
+//  Serial.println("written to cloud");
 }
 
 /**
@@ -233,13 +233,13 @@ void writeToFile(void *pvParameters)
             dataFile.println(dataString);
             dataFile.close();
             // print to the serial port too:
-            Serial.println(dataString);
+//            Serial.println(dataString);
           }
-        Serial.println(F("FILE"));
+//        Serial.println(F("FILE"));
         }
      }
   }
-  Serial.println("Written to file");
+//  Serial.println("Written to file");
 }
 
 /**
