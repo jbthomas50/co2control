@@ -34,6 +34,8 @@
 #include <semphr.h>
 #include <LiquidCrystal_I2C.h>
 #include <SoftwareSerial.h>
+#include <SD.h>
+#include <EEPROM.h>
 
 //Project Libraries
 #include "fan.h"
@@ -59,6 +61,7 @@ uint8_t numFans = 1;
 Fans fans = Fans(8, 9, 10, 11);
 bool refreshDisplay = true;
 uint8_t solenoidPin = 7;
+String fileName;
 
 //Prototypes
 void writeToFile(void *pvParameters);
@@ -183,6 +186,11 @@ void setUpHardware()
   pinMode(A1, INPUT);                   // CO2 1 million (middle)
   pinMode(A2, INPUT);                   // CO2 10 thousand (right)
   pinMode(solenoidPin, OUTPUT);
+
+  //Set up EEPROM and create file
+  uint8_t temp = EEPROM.read(0);
+  EEPROM.write(0, (temp + 1));
+  file = "project" + String(temp) + ".csv"
 }
 
 /**
@@ -213,20 +221,18 @@ void writeToCloud(void *pvParameters)
 void writeToFile(void *pvParameters)
 {
   //runs when function is called for the first time.
-
+  int count = 0;
   //runs forever
   for(;;)
   {
-    //TODO: Write to SD card here...
-     if(xSemaphoreTake(xSaveFileSignal, portMAX_DELAY))
-     {
-      if(xSemaphoreTake(xDisplayMutex, 1000))
-      {
-        Serial.println(F("FILE"));
-      }
-     }
+    File file = SD.open(fileName, FILE_WRITE);
+    file.print(count);
+    file.print(F(", "));
+    file.print(CO2_target);
+    file.print(", ");
+    file.print(CO2_level);
+    vTaskDelay(300000/*in ms*/ / portTICK_PERIOD_MS);
   }
-  Serial.println("Written to file");
 }
 
 /**
