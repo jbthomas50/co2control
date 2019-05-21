@@ -13,6 +13,10 @@
  *    Zac Carico and James Thomas
  *****************************************************************/
 
+ /*
+  * Possible scheduler: protothread library
+  */
+
 /******************************************************************
  *  Arduino Setup:
  *    Digital Pins:
@@ -31,7 +35,7 @@
 
 //Arduino Libraries
 #include <Arduino_FreeRTOS.h>
-#include <semphr.h>
+//#include <semphr.h>
 #include <LiquidCrystal_I2C.h>
 #include <SoftwareSerial.h>
 
@@ -40,8 +44,8 @@
 #include "CO2_Sensor.h"
 
 //SEMAPHORES
-SemaphoreHandle_t xLevelMutex;
-SemaphoreHandle_t xTargetMutex;
+//SemaphoreHandle_t xLevelMutex;
+//SemaphoreHandle_t xTargetMutex;
 // QueueHandle_t xDisplayQueue;
 
 //GLOBAL VARIABLES
@@ -68,23 +72,23 @@ void setup()
   setUpHardware();
 
   //define Semaphores
-  if(xLevelMutex == NULL)
-  {
-    xLevelMutex = xSemaphoreCreateMutex();
-    if( (xLevelMutex) != NULL)
-    {
-      xSemaphoreGive((xLevelMutex));
-    }
-  }
-
-  if(xTargetMutex == NULL)
-  {
-    xTargetMutex = xSemaphoreCreateMutex();
-    if( (xTargetMutex) != NULL)
-    {
-      xSemaphoreGive((xTargetMutex));
-    }
-  }
+//  if(xLevelMutex == NULL)
+//  {
+//    xLevelMutex = xSemaphoreCreateMutex();
+//    if( (xLevelMutex) != NULL)
+//    {
+//      xSemaphoreGive((xLevelMutex));
+//    }
+//  }
+//
+//  if(xTargetMutex == NULL)
+//  {
+//    xTargetMutex = xSemaphoreCreateMutex();
+//    if( (xTargetMutex) != NULL)
+//    {
+//      xSemaphoreGive((xTargetMutex));
+//    }
+//  }
 
   xTaskCreate(manageCO2_levels, "mngCO2", 
               100, NULL, 3, NULL);
@@ -189,22 +193,22 @@ void readCO2_sensor(void *pvParameters)
       tempTarget = 1000000;
     }
     
-    if(xSemaphoreTake(xLevelMutex, 1000))
-    {
+//    if(xSemaphoreTake(xLevelMutex, 1000))
+//    {
       if(CO2_level != tempLevel)
         refreshDisplay = true;
         
       CO2_level = tempLevel;
-      xSemaphoreGive(xLevelMutex);
-    }
-    if(xSemaphoreTake(xTargetMutex, 1000))
-    {
+//      xSemaphoreGive(xLevelMutex);
+//    }
+//    if(xSemaphoreTake(xTargetMutex, 1000))
+//    {
       if(CO2_target != tempTarget)
         refreshDisplay = true;
         
       CO2_target = tempTarget;
-      xSemaphoreGive(xTargetMutex);
-    }
+//      xSemaphoreGive(xTargetMutex);
+//    }
 
     vTaskDelay(500/*in ms*/ / portTICK_PERIOD_MS);
   }

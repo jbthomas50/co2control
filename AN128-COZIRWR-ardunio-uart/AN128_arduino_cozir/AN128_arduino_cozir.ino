@@ -79,8 +79,8 @@ int fill_buffer(void)
     } 
   }        
   // buffer() now filled with sensor ascii data
-//   ind contains the number of characters loaded into buffer up to 0xA =  CR
-  ind = ind -2; // decrement buffer to exactly match last numerical character
+  //   ind contains the number of characters loaded into buffer up to 0xA =  CR
+  ind = ind - 2; // decrement buffer to exactly match last numerical character
 }
 
 int format_output_co2(void){ // read buffer, extract 6 ASCII chars, convert to PPM and print

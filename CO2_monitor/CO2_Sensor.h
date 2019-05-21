@@ -42,16 +42,15 @@ void CO2_Sensor::fill_buffer()
   // Fill buffer with sensor ascii data
   this->ind = 0;
   while(this->buffer[ind-1] != 0x0A)
-  {  // Read sensor and fill buffer up to 0XA = CR
+  {                                          // Read sensor and fill buffer up to 0XA = CR
     if(this->CO2_serial->available())
     {
       buffer[this->ind] = this->CO2_serial->read();
       this->ind++;
     } 
-  }
-  // buffer() now filled with sensor ascii data
-  // ind contains the number of characters loaded into buffer up to 0xA =  CR
-  ind = ind - 2; // decrement buffer to exactly match last numerical character
+  }                                         // buffer() now filled with sensor ascii data
+                                            // ind contains the number of characters loaded into buffer up to 0xA =  CR
+  ind = ind - 2;                            // decrement buffer to exactly match last numerical character
 }
 
 /**
@@ -63,17 +62,9 @@ void CO2_Sensor::read()
   {
     buffer[i] = ' ';
   }
-  this->CO2_serial->println("Z"); // send Mode Z outputs for filtered C02 reading
+  this->CO2_serial->println("Z");          // send Mode Z outputs for filtered C02 reading
   this->fill_buffer();
-//  Serial.print("Buffer contains: ");
-  for(int j=0; j<ind; j++)
-  {
-//    Serial.print((char)buffer[j]);
-  }
-//  Serial.print("\n");
-
   index = 0;
-//  Serial.print("\tFiltered PPM");
   this->format_output_co2();
 }
 
@@ -87,24 +78,19 @@ void CO2_Sensor::begin()
   this->ind = 0;
   this->index = 0;
   this->CO2_serial->begin(9600);
-  this->CO2_serial->println("K 2");  // set polling mode
+  this->CO2_serial->println("K 2");            // set polling mode
 }
 
 /**
  * 
  */
 int CO2_Sensor::format_output_co2()
-{ 
-  // read buffer, extract 6 ASCII chars, convert to PPM and print
+{                                                // read buffer, extract 6 ASCII chars, convert to PPM and print
   co2 = buffer[bufferMax-index++]-0x30;
   co2 += (buffer[bufferMax-index++]-0x30)*10;
   co2 += (buffer[bufferMax-index++]-0x30)*100;
   co2 += (buffer[bufferMax-index++]-0x30)*1000;
   co2 += (buffer[bufferMax-index++]-0x30)*10000;
-//  Serial.print("\n CO2 = ");
-//  Serial.print(co2*multiplier);
-//  Serial.print(" PPM");
-//  Serial.print("\n");
 }
 
 /**
