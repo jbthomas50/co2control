@@ -177,8 +177,8 @@ void writeToCloud(void *pvParameters)
 void readCO2_sensor(void *pvParameters)
 {
   //runs when function is called for the first time.
-  static unsigned long tempLevel = 0;
-  static unsigned long tempTarget = 0;
+  unsigned long tempLevel = 0;
+  unsigned long tempTarget = 0;
   //runs forever
   for(;;)
   {
