@@ -210,7 +210,7 @@ void readCO2_sensor(void *pvParameters)
 //      xSemaphoreGive(xTargetMutex);
 //    }
 
-    vTaskDelay(500/*in ms*/ / portTICK_PERIOD_MS);
+    vTaskDelay(1000/*in ms*/ / portTICK_PERIOD_MS);
   }
 }
 
@@ -232,6 +232,6 @@ void manageCO2_levels(void *pvParameters)
     {
       digitalWrite(solenoidPin, HIGH);
     }
-    vTaskDelay(500/*in ms*/ / portTICK_PERIOD_MS);
+    vTaskDelay(1000/*in ms*/ / portTICK_PERIOD_MS);
   }
 }
