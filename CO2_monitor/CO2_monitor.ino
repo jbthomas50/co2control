@@ -184,6 +184,10 @@ void readCO2_sensor(void *pvParameters)
 
     // READ USER INPUT
     tempTarget = (map(analogRead(A2), 0, 1023, 0, 100) * 100) + (map(analogRead(A1), 0, 1023, 1, 100) * 10000);
+    if (tempTarget > 1000000)
+    {
+      tempTarget = 1000000;
+    }
     
     if(xSemaphoreTake(xLevelMutex, 1000))
     {
@@ -216,7 +220,7 @@ void manageCO2_levels(void *pvParameters)
   for(;;)
   {
     //TODO: Turn on solenoid here...
-    if (CO2_target < CO2_level)
+    if (CO2_target <= CO2_level)
     {
       digitalWrite(solenoidPin, LOW);
     }
