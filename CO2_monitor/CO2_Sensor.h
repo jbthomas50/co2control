@@ -31,26 +31,25 @@ private:
  */
 int CO2_Sensor::getCO2()
 {
-  return (this->co2 * this->multiplier);
+  return (co2 * multiplier);
 }
 
 /**
  * Reads the CO2 Sensor and fills the buffer
  */
 void CO2_Sensor::fill_buffer()
-{
-  // Fill buffer with sensor ascii data
-  this->ind = 0;
-  while(this->buffer[ind-1] != 0x0A)
-  {                                          // Read sensor and fill buffer up to 0XA = CR
-    if(this->CO2_serial->available())
+{                               // Fill buffer with sensor ascii data
+  ind = 0;
+  while(buffer[ind-1] != 0x0A)
+  {                             // Read sensor and fill buffer up to 0XA = CR
+    if((*CO2_serial).available())
     {
-      buffer[this->ind] = this->CO2_serial->read();
-      this->ind++;
+      buffer[ind] = (*CO2_serial).read();
+      ind++;   
     } 
-  }                                         // buffer() now filled with sensor ascii data
-                                            // ind contains the number of characters loaded into buffer up to 0xA =  CR
-  ind = ind - 2;                            // decrement buffer to exactly match last numerical character
+  }                             // buffer() now filled with sensor ascii data
+                                //   ind contains the number of characters loaded into buffer up to 0xA =  CR
+  ind = ind - 2;                // decrement buffer to exactly match last numerical character
 }
 
 /**

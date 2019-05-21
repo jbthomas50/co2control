@@ -103,7 +103,7 @@ void loop()
   //Tasks during down time, or delays.
   uint8_t tempFans = numFans;
   numFans = map(analogRead(A0), 0, 1024, 0, 5);
-  Serial.println(numFans);
+
   if (numFans != tempFans)
   {
     fans.on(numFans);

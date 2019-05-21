@@ -19,7 +19,7 @@ AN128_ardunio_cozir CO2 Demonstration code 11/29/2017 Runs on Ardunio UNO, MEGA 
 
 SoftwareSerial mySerial(12, 13); // RX, TX pins on Ardunio
 
-int co2 =0;
+int co2 = 0;
 double multiplier = 100;// 1 for 2% =20000 PPM, 10 for 20% = 200,000 PPM
 uint8_t buffer[25];
 uint8_t ind = 0;
