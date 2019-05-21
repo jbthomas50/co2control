@@ -17,12 +17,12 @@ public:
   void begin();
   CO2_Sensor(SoftwareSerial * CO2_serial);
 private:
-  uint8_t buffer[25];
+  uint8_t buffer[10];
   uint8_t ind;
   uint8_t index;
   int co2;
   int multiplier; // 1 for 2% = 20,000 PPM, 10 for 20% = 200,000, 100 for 100%
-  int format_output_co2();
+  int format_output();
   SoftwareSerial *CO2_serial;
 };
 
@@ -61,10 +61,10 @@ void CO2_Sensor::read()
   {
     buffer[i] = ' ';
   }
-  this->CO2_serial->println("Z");          // send Mode Z outputs for filtered C02 reading
+  this->CO2_serial->println("Z");          // send Mode Z output for filtered C02 reading
   this->fill_buffer();
   index = 0;
-  this->format_output_co2();
+  this->format_output();
 }
 
 /**
@@ -77,13 +77,15 @@ void CO2_Sensor::begin()
   this->ind = 0;
   this->index = 0;
   this->CO2_serial->begin(9600);
+  this->CO2_serial->println("K 0");            // set command mode
+  this->CO2_serial->println("Z");              // send mode for Z output
   this->CO2_serial->println("K 2");            // set polling mode
 }
 
 /**
  * 
  */
-int CO2_Sensor::format_output_co2()
+int CO2_Sensor::format_output()
 {                                                // read buffer, extract 6 ASCII chars, convert to PPM and print
   co2 = buffer[bufferMax-index++]-0x30;
   co2 += (buffer[bufferMax-index++]-0x30)*10;

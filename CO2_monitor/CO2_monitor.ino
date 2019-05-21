@@ -1,5 +1,6 @@
 /******************************************************************
  * CO2 control project
+ * 
  * Features:
  *    Co2 sensor
  *    User set desired co2 level
@@ -9,6 +10,7 @@
  *    Two lcd screens to display information
  *    Button to turn on/off screen backlights
  *    Write to SD card and google docs
+ *    
  * Written by:
  *    Zac Carico and James Thomas
  *****************************************************************/
@@ -29,7 +31,7 @@
  *    Analog Pins:
  *      Fan Pot:                0 
  *      CO2 Pots:               1, 2
- *      I2c:                    4(SDA), 5(SCL) // SD card, screens
+ *      I2c:                    4(SDA), 5(SCL) // SD card, 2 screens
  *      **Free:                 3
  *****************************************************************/
 
@@ -159,17 +161,17 @@ void setUpHardware()
 /**
  * Writes information to the cloud (Should make this a time interupt)
  */
-void writeToCloud(void *pvParameters)
-{  
-  //runs when function is called for the first time.
-
-  //runs forever
-  for(;;)
-  {
-    //TODO: Write to cloud here... 
-  }
-//  Serial.println("written to cloud");
-}
+//void writeToCloud(void *pvParameters)
+//{  
+//  //runs when function is called for the first time.
+//
+//  //runs forever
+//  for(;;)
+//  {
+//    //TODO: Write to cloud here... 
+//  }
+////  Serial.println("written to cloud");
+//}
 
 /**
  * Reads CO2 sensor
@@ -187,7 +189,8 @@ void readCO2_sensor(void *pvParameters)
     tempLevel = mySensor.getCO2();
 
     // READ USER INPUT
-    tempTarget = (map(analogRead(A2), 0, 1023, 0, 100) * 100) + (map(analogRead(A1), 0, 1023, 1, 100) * 10000);
+    tempTarget = (map(analogRead(A2), 0, 1023, 0, 100) * 100) + 
+                 (map(analogRead(A1), 0, 1023, 1, 100) * 10000);
     if (tempTarget > 1000000)
     {
       tempTarget = 1000000;
