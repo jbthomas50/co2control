@@ -77,8 +77,6 @@ void CO2_Sensor::begin()
   this->ind = 0;
   this->index = 0;
   this->CO2_serial->begin(9600);
-  this->CO2_serial->println("K 0");            // set command mode
-  this->CO2_serial->println("Z");              // send mode for Z output
   this->CO2_serial->println("K 2");            // set polling mode
 }
 
